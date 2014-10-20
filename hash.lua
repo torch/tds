@@ -4,7 +4,7 @@ local C = tds.C
 
 local hash = {}
 
-function tds.hash()
+function hash.new()
    local self = C.tds_hash_new()
    if self == nil then
       error('unable to allocate hash')
@@ -41,6 +41,7 @@ local function lkey2obj(self, lkey)
 end
 
 function hash:__newindex(lkey, lval)
+   assert(self)
    local obj = lkey2obj(self, lkey)
    if obj ~= nil then
       if lval then
@@ -57,25 +58,61 @@ function hash:__newindex(lkey, lval)
    end
 end
 
+local function objelem2lua(val)
+   assert(val)
+   local valtyp = ffi.string(C.tds_elem_typename(val))
+   if valtyp == 'number' then
+      return ffi.cast('tds_number*', val).value
+   elseif valtyp == 'string' then
+      return ffi.string(ffi.cast('tds_string*', val).data)
+   else
+      error(string.format('value type <%s> not supported yet', valtyp))
+   end
+end
+
 function hash:__index(lkey)
+   assert(self)
    local obj = lkey2obj(self, lkey)
    if obj ~= nil then
       local val = C.tds_hash_object_value(obj)
-      local valtyp = ffi.string(C.tds_elem_typename(val))
-      if valtyp == 'number' then
-         return ffi.cast('tds_number*', val).value
-      elseif valtyp == 'string' then
-         return ffi.string(ffi.cast('tds_string*', val).data)
-      else
-         error(string.format('value type <%s> not supported yet', valtyp))
-      end
+      return objelem2lua(val)
    end
 end
 
 function hash:__len()
+   assert(self)
    return tonumber(C.tds_hash_size(self))
 end
 
+function hash:__pairs()
+   assert(self)
+   local iterator = C.tds_hash_iterator_new(self)
+   ffi.gc(iterator, C.tds_hash_iterator_free)
+
+   return function()
+      local obj = C.tds_hash_iterator_next(iterator)
+      if obj ~= nil then
+         local key = C.tds_hash_object_key(obj)
+         local val = C.tds_hash_object_value(obj)
+         return objelem2lua(key), objelem2lua(val)
+      end
+   end
+end
+
+hash.pairs = hash.__pairs
+
 ffi.metatype('tds_hash', hash)
 
-return tds.hash
+-- table constructor
+local hash_ctr = {}
+setmetatable(
+   hash_ctr,
+   {
+      __index = hash,
+      __newindex = hash,
+      __call = hash.new
+   }
+)
+tds.hash = hash_ctr
+
+return hash_ctr

@@ -62,4 +62,9 @@ unsigned long tds_hash_size(tds_hash *hash);
 void tds_hash_remove(tds_hash *hash, tds_hash_object *obj);
 void tds_hash_free(tds_hash* hash);
 
+typedef struct tds_hash_iterator_  tds_hash_iterator;
+tds_hash_iterator* tds_hash_iterator_new(tds_hash* hash);
+tds_hash_object* tds_hash_iterator_next(tds_hash_iterator* iterator);
+void tds_hash_iterator_free(tds_hash_iterator* iterator);
+
 ]]

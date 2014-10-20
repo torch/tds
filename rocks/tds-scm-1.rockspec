@@ -29,7 +29,8 @@ build = {
             "hash.c",
             "tommyds/tommyds/tommyhashlin.c",
             "tommyds/tommyds/tommylist.c",
-            "tommyds/tommyds/tommyhash.c"
+            "tommyds/tommyds/tommyhash.c",
+            "tommyds/tommyds/tommyarrayof.c"
          },
          incdirs = {
             "tommyds/tommyds",

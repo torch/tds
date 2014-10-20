@@ -307,4 +307,74 @@ void tds_hash_remove(tds_hash *hash, tds_hash_object *obj)
 void tds_hash_free(tds_hash* hash)
 {
   tommy_hashlin_foreach(hash->hash, (void(*)(void*))tds_hash_object_free);
+  tommy_hashlin_done(hash->hash);
+}
+
+/* iterator */
+struct tds_hash_iterator_node {
+  tommy_node node;
+  tds_hash_object *obj;
+};
+
+typedef struct tds_hash_iterator_ {
+  tommy_arrayof *array;
+  size_t index;
+  size_t size;
+} tds_hash_iterator;
+
+static void tds_add_hash_node_to_list(void *iterator_, void *obj_)
+{
+  tds_hash_iterator *iterator = (tds_hash_iterator*)iterator_;
+  struct tds_hash_iterator_node *node = tommy_arrayof_ref(iterator->array, iterator->index);
+  tds_hash_object *obj = (tds_hash_object*)obj_;
+  node->obj = obj;
+  iterator->index++;
+}
+
+tds_hash_iterator* tds_hash_iterator_new(tds_hash* hash)
+{
+  size_t size = tds_hash_size(hash);
+  tommy_arrayof *array;
+  tds_hash_iterator *iterator;
+
+  /* init a big array */
+  iterator = tds_malloc(sizeof(tds_hash_iterator));
+  if(!iterator)
+    return NULL;
+
+  array = tds_malloc(sizeof(tommy_arrayof));
+  if(!array) {
+    tds_free(iterator);
+    return NULL;
+  }
+  tommy_arrayof_init(array, sizeof(struct tds_hash_iterator_node));
+  tommy_arrayof_grow(array, size);
+
+  /* fill it up with hash nodes */
+  iterator->array = array;
+  iterator->index = 0;
+  iterator->size = size;
+  tommy_hashlin_foreach_arg(hash->hash, tds_add_hash_node_to_list, iterator);
+
+  /* reset iterator */
+  iterator->index = 0;
+
+  return iterator;
+}
+
+tds_hash_object* tds_hash_iterator_next(tds_hash_iterator* iterator)
+{
+  if(iterator->index >= iterator->size)
+    return NULL;
+  else {
+    iterator->index++;
+    return ((struct tds_hash_iterator_node*)tommy_arrayof_ref(iterator->array, iterator->index-1))->obj;
+  }
+}
+
+void tds_hash_iterator_free(tds_hash_iterator* iterator)
+{
+  tommy_arrayof_done(iterator->array);
+  tds_free(iterator->array);
+  tds_free(iterator);
 }
