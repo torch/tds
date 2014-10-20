@@ -78,6 +78,10 @@ tds_elem* tds_elem_string_new(const char* str, long size)
   tds_string *tstr = tds_malloc(sizeof(tds_string));
   if(tstr) {
     tstr->data = tds_malloc(size);
+    if(!tstr->data) {
+      free(tstr);
+      return NULL;
+    }
     memcpy(tstr->data, str, size);
     tstr->size = size;
     tstr->elem.vtable = &tds_elem_string_vtable;
@@ -224,8 +228,14 @@ typedef struct tds_hash_ {
 tds_hash* tds_hash_new()
 {
   tds_hash *hash = tds_malloc(sizeof(tds_hash));
-  hash->hash = tds_malloc(sizeof(tommy_hashlin));
-  tommy_hashlin_init(hash->hash);
+  if(hash) {
+    hash->hash = tds_malloc(sizeof(tommy_hashlin));
+    if(!hash->hash) {
+      free(hash);
+      return NULL;
+    }
+    tommy_hashlin_init(hash->hash);
+  }
   return hash;
 }
 
