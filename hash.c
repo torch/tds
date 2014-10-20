@@ -162,7 +162,6 @@ tds_elem* tds_elem_pointer_new(void *addr, void (*free)(void*))
 
 /* hash object */
 typedef struct tds_hash_object_ {
-//  tommy_node list_node;
   tommy_node hash_node;
 
   tds_elem *key;
@@ -214,9 +213,11 @@ void tds_hash_object_free(tds_hash_object *obj)
 }
 
 /* hash structure */
+/* i keep it like that for now,
+   thinking about optimizing allocations
+   of elements/nodes */
 typedef struct tds_hash_ {
   tommy_hashlin *hash;
-//  tommy_list *list;
 } tds_hash;
 
 
@@ -224,16 +225,13 @@ tds_hash* tds_hash_new()
 {
   tds_hash *hash = tds_malloc(sizeof(tds_hash));
   hash->hash = tds_malloc(sizeof(tommy_hashlin));
-//  hash->list = tds_malloc(sizeof(tommy_list));
   tommy_hashlin_init(hash->hash);
-//  tommy_list_init(hash->list);
   return hash;
 }
 
 void tds_hash_insert(tds_hash *hash, tds_hash_object *obj)
 {
   tommy_hashlin_insert(hash->hash, &obj->hash_node, obj, tds_elem_hashkey(obj->key));
-//  tommy_list_insert_tail(hash->list, &obj->list_node, obj);
 }
 
 static int tds_hash_search_string_callback(const void *arg, const void *obj)
