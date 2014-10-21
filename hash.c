@@ -316,6 +316,8 @@ void tds_hash_free(tds_hash* hash)
 {
   tommy_hashlin_foreach(hash->hash, (void(*)(void*))tds_hash_object_free);
   tommy_hashlin_done(hash->hash);
+  tds_free(hash->hash);
+  tds_free(hash);
 }
 
 /* iterator */

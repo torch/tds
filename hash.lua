@@ -49,6 +49,7 @@ function hash:__newindex(lkey, lval)
          C.tds_hash_object_set_value(obj, val)
       else
          C.tds_hash_remove(self, obj)
+         C.tds_hash_object_free(obj)
       end
    else
       local key = lua2Celem(lkey)
