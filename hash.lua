@@ -48,12 +48,14 @@ function hash:__newindex(lkey, lval)
          C.tds_hash_object_free(obj)
       end
    else
-      local obj = C.tds_hash_object_new()
-      local key = C.tds_hash_object_key(obj)
-      local val = C.tds_hash_object_value(obj)
-      setelem(val, lval)
-      setelem(key, lkey)
-      C.tds_hash_insert(self, obj)
+      if lval then
+         local obj = C.tds_hash_object_new()
+         local key = C.tds_hash_object_key(obj)
+         local val = C.tds_hash_object_value(obj)
+         setelem(val, lval)
+         setelem(key, lkey)
+         C.tds_hash_insert(self, obj)
+      end
    end
 end
 
