@@ -186,7 +186,9 @@ static int tds_hash_search_string_callback(const void *arg_, const void *obj_)
 tds_hash_object* tds_hash_search_string(tds_hash *hash, const char *str, long size)
 {
   tds_elem tstr;
-  tds_elem_set_string(&tstr, str, size);
+  tstr.type = 's';
+  tstr.value.str.data = (char*)str; /* i know what i am doing */
+  tstr.value.str.size = size;
   return tommy_hashlin_search(hash->hash, tds_hash_search_string_callback, &tstr, tommy_hash_u32(0, str, size));
 }
 
