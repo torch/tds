@@ -64,7 +64,8 @@ local function objelem2lua(val)
    if valtyp == 'number' then
       return ffi.cast('tds_number*', val).value
    elseif valtyp == 'string' then
-      return ffi.string(ffi.cast('tds_string*', val).data)
+      val = ffi.cast('tds_string*', val)
+      return ffi.string(val.data, val.size)
    else
       error(string.format('value type <%s> not supported yet', valtyp))
    end
