@@ -13,22 +13,17 @@ function hash.new()
    return self
 end
 
-local function lua2Celem(lelem)
-   local elem
+local function setelem(elem, lelem)
    if type(lelem) == 'string' then
-      elem = C.tds_elem_string_new(lelem, #lelem)
+      C.tds_elem_set_string(elem, lelem, #lelem)
    elseif type(lelem) == 'number' then
-      elem = C.tds_elem_number_new(lelem)
+      C.tds_elem_set_number(elem, lelem)
    else
       error('string or number key/value expected')
    end
-   if elem == nil then
-      error('unable to allocate C key/value')
-   end
-   return elem
 end
 
-local function lkey2obj(self, lkey)
+local function findkey(self, lkey)
    local obj
    if type(lkey) == 'string' then
       obj = C.tds_hash_search_string(self, lkey, #lkey)
@@ -42,42 +37,45 @@ end
 
 function hash:__newindex(lkey, lval)
    assert(self)
-   local obj = lkey2obj(self, lkey)
+   local obj = findkey(self, lkey)
    if obj ~= nil then
       if lval then
-         local val = lua2Celem(lval)
-         C.tds_hash_object_set_value(obj, val)
+         local val = C.tds_hash_object_value(obj)
+         setelem(val, lval)
       else
          C.tds_hash_remove(self, obj)
          C.tds_hash_object_free(obj)
       end
    else
-      local key = lua2Celem(lkey)
-      local val = lua2Celem(lval)
-      local obj = C.tds_hash_object_new(key, val)
+      local obj = C.tds_hash_object_new()
+      local key = C.tds_hash_object_key(obj)
+      local val = C.tds_hash_object_value(obj)
+      setelem(val, lval)
+      setelem(key, lkey)
       C.tds_hash_insert(self, obj)
    end
 end
 
-local function objelem2lua(val)
-   assert(val)
-   local valtyp = ffi.string(C.tds_elem_typename(val))
-   if valtyp == 'number' then
-      return ffi.cast('tds_number*', val).value
-   elseif valtyp == 'string' then
-      val = ffi.cast('tds_string*', val)
-      return ffi.string(val.data, val.size)
+local function getelem(elem)
+   assert(elem)
+   local value
+   local elemtype = C.tds_elem_type(elem)
+   if elemtype == 110 then--string.byte('n') then
+      value =  C.tds_elem_get_number(elem)
+   elseif elemtype == 115 then--string.byte('s') then
+      value = ffi.string(C.tds_elem_get_string(elem), C.tds_elem_get_string_size(elem))
    else
-      error(string.format('value type <%s> not supported yet', valtyp))
+      error(string.format('value type <%s> not supported yet', elemtype))
    end
+   return value
 end
 
 function hash:__index(lkey)
    assert(self)
-   local obj = lkey2obj(self, lkey)
+   local obj = findkey(self, lkey)
    if obj ~= nil then
-      local val = C.tds_hash_object_value(obj)
-      return objelem2lua(val)
+      local val = getelem(C.tds_hash_object_value(obj))
+      return val
    end
 end
 
@@ -94,9 +92,9 @@ function hash:__pairs()
    return function()
       local obj = C.tds_hash_iterator_next(iterator)
       if obj ~= nil then
-         local key = C.tds_hash_object_key(obj)
-         local val = C.tds_hash_object_value(obj)
-         return objelem2lua(key), objelem2lua(val)
+         local key = getelem(C.tds_hash_object_key(obj))
+         local val = getelem(C.tds_hash_object_value(obj))
+         return key, val
       end
    end
 end

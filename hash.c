@@ -17,202 +17,126 @@ void tds_free(void *ptr)
 }
 
 /* basic elements contained in data structures */
-struct tds_elem_;
-
-struct tds_elem_vtable_ {
-  void (*free)(struct tds_elem_*);
-  uint32_t (*hashkey)(struct tds_elem_*);
-  const char* typename;
-};
-
 typedef struct tds_elem_ {
-  struct tds_elem_vtable_ *vtable;
+  union {
+    double num;
+
+    struct {
+      char *data;
+      size_t size;
+    } str;
+
+    struct {
+      void *data;
+      void (*free)(void*);
+    } ptr;
+
+  } value;
+
+  char type;
+
 } tds_elem;
 
-void tds_elem_free(tds_elem *elem)
-{
-  elem->vtable->free(elem);
-}
 
 uint32_t tds_elem_hashkey(tds_elem *elem)
 {
-  return elem->vtable->hashkey(elem);
-}
-
-const char* tds_elem_typename(tds_elem *elem)
-{
-  return elem->vtable->typename;
-}
-
-/* string element */
-typedef struct tds_string_ {
-  tds_elem elem;
-  char *data;
-  long size;
-} tds_string;
-
-static void tds_elem_string_free(tds_elem *elem)
-{
-  tds_string *tstr = (tds_string*)elem;
-  if(tstr->data)
-    tds_free(tstr->data);
-  tds_free(tstr);
-}
-
-static uint32_t tds_elem_string_hashkey(tds_elem *elem)
-{
-  tds_string *tstr = (tds_string*)elem;
-  return tommy_hash_u32(0, tstr->data, tstr->size);
-}
-
-static const char tds_elem_string_typename[] = "string";
-
-static struct tds_elem_vtable_ tds_elem_string_vtable = {
-  tds_elem_string_free,
-  tds_elem_string_hashkey,
-  tds_elem_string_typename
-};
-
-tds_elem* tds_elem_string_new(const char* str, long size)
-{
-  tds_string *tstr = tds_malloc(sizeof(tds_string));
-  if(tstr) {
-    tstr->data = tds_malloc(size);
-    if(!tstr->data) {
-      free(tstr);
-      return NULL;
-    }
-    memcpy(tstr->data, str, size);
-    tstr->size = size;
-    tstr->elem.vtable = &tds_elem_string_vtable;
+  switch(elem->type) {
+    case 'n':
+      return tommy_hash_u32(0, &elem->value.num, sizeof(double));
+    case 's':
+      return tommy_hash_u32(0, elem->value.str.data, elem->value.str.size);
+    case 'p':
+      return tommy_hash_u32(0, elem->value.ptr.data, sizeof(void*));
   }
-  return (tds_elem*)tstr;
+  return 0;
 }
 
-/* number element */
-typedef struct tds_number_ {
-  tds_elem elem;
-  double value;
-} tds_number;
-
-static void tds_elem_number_free(tds_elem *elem)
+void tds_elem_set_number(tds_elem *elem, double num)
 {
-  tds_free(elem);
+  elem->type = 'n';
+  elem->value.num = num;
 }
 
-static uint32_t tds_elem_number_hashkey(tds_elem *elem)
+void tds_elem_set_string(tds_elem *elem, const char *str, size_t size)
 {
-  tds_number *tnum = (tds_number*)elem;
-  return tommy_hash_u32(0, &tnum->value, sizeof(double));
-}
-
-static const char tds_elem_number_typename[] = "number";
-
-static struct tds_elem_vtable_ tds_elem_number_vtable = {
-  tds_elem_number_free,
-  tds_elem_number_hashkey,
-  tds_elem_number_typename
-};
-
-tds_elem* tds_elem_number_new(double value)
-{
-  tds_number *tnum = tds_malloc(sizeof(tds_number));
-  if(tnum) {
-    tnum->value = value;
-    tnum->elem.vtable = &tds_elem_number_vtable;
+  elem->type = 's';
+  elem->value.str.data = tds_malloc(size);
+  if(elem->value.str.data) {
+    memcpy(elem->value.str.data, str, size);
+    elem->value.str.size = size;
   }
-  return (tds_elem*)tnum;
 }
 
-/* pointer element */
-typedef struct tds_pointer_ {
-  tds_elem elem;
-  void *addr;
-  void (*free)(void*);
-} tds_pointer;
-
-static void tds_elem_pointer_free(tds_elem *elem)
+void tds_elem_set_pointer(tds_elem *elem, void *ptr, void (*free)(void*))
 {
-  tds_pointer *tptr = (tds_pointer*)elem;
-  if(tptr->free)
-    tptr->free(tptr->addr);
-  tds_free(tptr);
+  elem->type = 'p';
+  elem->value.ptr.data = ptr;
+  elem->value.ptr.free = free;
 }
 
-static uint32_t tds_elem_pointer_hashkey(tds_elem *elem)
+double tds_elem_get_number(tds_elem *elem)
 {
-  tds_pointer *tptr = (tds_pointer*)elem;
-  return tommy_hash_u32(0, &tptr->addr, sizeof(void*));
+  return elem->value.num;
 }
 
-static const char tds_elem_pointer_typename[] = "pointer";
-
-static struct tds_elem_vtable_ tds_elem_pointer_vtable = {
-  tds_elem_pointer_free,
-  tds_elem_pointer_hashkey,
-  tds_elem_pointer_typename
-};
-
-tds_elem* tds_elem_pointer_new(void *addr, void (*free)(void*))
+const char* tds_elem_get_string(tds_elem *elem)
 {
-  tds_pointer *tptr = tds_malloc(sizeof(tds_pointer));
-  if(tptr) {
-    tptr->addr = addr;
-    tptr->free = free;
-    tptr->elem.vtable = &tds_elem_pointer_vtable;
-  }
-  return (tds_elem*)tptr;
+  return elem->value.str.data;
+}
+
+size_t tds_elem_get_string_size(tds_elem *elem)
+{
+  return elem->value.str.size;
+}
+
+void* tds_elem_get_pointer(tds_elem *elem)
+{
+  return elem->value.ptr.data;
+}
+
+char tds_elem_type(tds_elem *elem)
+{
+  return elem->type;
+}
+
+void tds_elem_free(tds_elem *elem)
+{
+  if(elem->type == 's')
+    tds_free(elem->value.str.data);
+  elem->type = 0;
 }
 
 /* hash object */
 typedef struct tds_hash_object_ {
   tommy_node hash_node;
 
-  tds_elem *key;
-  tds_elem *value;
+  tds_elem key;
+  tds_elem val;
 
 } tds_hash_object;
 
+tds_hash_object *tds_hash_object_new(void)
+{
+  tds_hash_object *obj = tds_malloc(sizeof(tds_hash_object));
+  obj->key.type = 0;
+  obj->val.type = 0;
+  return obj;
+}
+
 tds_elem* tds_hash_object_key(tds_hash_object *obj)
 {
-  return obj->key;
+  return &obj->key;
 }
 
 tds_elem* tds_hash_object_value(tds_hash_object *obj)
 {
-  return obj->value;
-}
-
-void tds_hash_object_set_key(tds_hash_object *obj, tds_elem *key)
-{
-  if(obj->key)
-    tds_elem_free(obj->key);
-  obj->key = key;
-}
-
-void tds_hash_object_set_value(tds_hash_object *obj, tds_elem *value)
-{
-  if(obj->value)
-    tds_elem_free(obj->value);
-  obj->value = value;
-}
-
-tds_hash_object *tds_hash_object_new(tds_elem *key, tds_elem *value)
-{
-  tds_hash_object *obj = tds_malloc(sizeof(tds_hash_object));
-  if(obj) {
-    obj->key = key;
-    obj->value = value;
-  }
-  return obj;
+  return &obj->val;
 }
 
 void tds_hash_object_free(tds_hash_object *obj)
 {
-  if(obj->key)
-    tds_elem_free(obj->key);
-  if(obj->value)
-    tds_elem_free(obj->value);
+  tds_elem_free(&obj->key);
+  tds_elem_free(&obj->val);
   tds_free(obj);
 }
 
@@ -241,39 +165,47 @@ tds_hash* tds_hash_new()
 
 void tds_hash_insert(tds_hash *hash, tds_hash_object *obj)
 {
-  tommy_hashlin_insert(hash->hash, &obj->hash_node, obj, tds_elem_hashkey(obj->key));
+  tommy_hashlin_insert(hash->hash, &obj->hash_node, obj, tds_elem_hashkey(&obj->key));
 }
 
-static int tds_hash_search_string_callback(const void *arg, const void *obj)
+static int tds_hash_search_string_callback(const void *arg_, const void *obj_)
 {
-  const tds_string *astr = arg;
-  const tds_string *ostr = (tds_string*)((tds_hash_object*)obj)->key;
-  long size = astr->size;
+  const tds_elem *astr = arg_; /* must be a string */
+  tds_hash_object *obj = (tds_hash_object*)obj_;
+  long size = astr->value.str.size;
 
-  if(size != ostr->size)
+  if(obj->key.type != 's')
     return 1;
 
-  return memcmp(astr->data, ostr->data, size);
+  if(size != obj->key.value.str.size)
+    return 1;
+
+  return memcmp(astr->value.str.data, obj->key.value.str.data, size);
 }
 
 tds_hash_object* tds_hash_search_string(tds_hash *hash, const char *str, long size)
 {
-  tds_string tstr;
-  tstr.data = (char*)str; /* we do not touch it, i promise */
-  tstr.size = size;
+  tds_elem tstr;
+  tds_elem_set_string(&tstr, str, size);
   return tommy_hashlin_search(hash->hash, tds_hash_search_string_callback, &tstr, tommy_hash_u32(0, str, size));
 }
 
 tds_hash_object* tds_hash_remove_string(tds_hash *hash, const char *str, long size)
 {
-  return tommy_hashlin_remove(hash->hash, tds_hash_search_string_callback, str, tommy_hash_u32(0, str, size));
+  tds_elem tstr;
+  tds_elem_set_string(&tstr, str, size);
+  return tommy_hashlin_remove(hash->hash, tds_hash_search_string_callback, &tstr, tommy_hash_u32(0, str, size));
 }
 
-static int tds_hash_search_number_callback(const void *arg, const void *obj)
+static int tds_hash_search_number_callback(const void *arg_, const void *obj_)
 {
-  double anumber = *((double*)arg);
-  double onumber = ((tds_number*)(((tds_hash_object*)obj)->key))->value;
-  return anumber != onumber;
+  double anumber = *((double*)arg_);
+  tds_hash_object *obj = (tds_hash_object*)obj_;
+
+  if(obj->key.type != 'n')
+    return 1;
+
+  return anumber != obj->key.value.num;
 }
 
 tds_hash_object* tds_hash_search_number(tds_hash *hash, double number)
@@ -286,10 +218,14 @@ tds_hash_object* tds_hash_remove_number(tds_hash *hash, double number)
   return tommy_hashlin_remove(hash->hash, tds_hash_search_number_callback, &number, tommy_hash_u32(0, &number, sizeof(double)));
 }
 
-static int tds_hash_search_pointer_callback(const void *arg, const void *obj)
+static int tds_hash_search_pointer_callback(const void *arg, const void *obj_)
 {
-  tds_pointer *tptr = (tds_pointer*)obj;
-  return arg != tptr->addr;
+  tds_hash_object *obj = (tds_hash_object*)obj_;
+
+  if(obj->key.type != 'p')
+    return 1;
+
+  return arg != obj->key.value.ptr.data;
 }
 
 tds_hash_object* tds_hash_search_pointer(tds_hash *hash, void* ptr)
