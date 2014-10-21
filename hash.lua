@@ -52,10 +52,12 @@ function hash:__newindex(lkey, lval)
          C.tds_hash_object_free(obj)
       end
    else
-      local key = lua2Celem(lkey)
-      local val = lua2Celem(lval)
-      local obj = C.tds_hash_object_new(key, val)
-      C.tds_hash_insert(self, obj)
+      if lval then
+         local key = lua2Celem(lkey)
+         local val = lua2Celem(lval)
+         local obj = C.tds_hash_object_new(key, val)
+         C.tds_hash_insert(self, obj)
+      end
    end
 end
 
