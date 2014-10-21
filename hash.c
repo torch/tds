@@ -99,10 +99,12 @@ char tds_elem_type(tds_elem *elem)
   return elem->type;
 }
 
-void tds_elem_free(tds_elem *elem)
+void tds_elem_free_content(tds_elem *elem)
 {
   if(elem->type == 's')
     tds_free(elem->value.str.data);
+  if(elem->type == 'p' && elem->value.ptr.free)
+    elem->value.ptr.free(elem->value.ptr.data);
   elem->type = 0;
 }
 
@@ -135,8 +137,8 @@ tds_elem* tds_hash_object_value(tds_hash_object *obj)
 
 void tds_hash_object_free(tds_hash_object *obj)
 {
-  tds_elem_free(&obj->key);
-  tds_elem_free(&obj->val);
+  tds_elem_free_content(&obj->key);
+  tds_elem_free_content(&obj->val);
   tds_free(obj);
 }
 

@@ -41,7 +41,7 @@ function hash:__newindex(lkey, lval)
    if obj ~= nil then
       if lval then
          local val = C.tds_hash_object_value(obj)
-         C.tds_elem_free(val)
+         C.tds_elem_free_content(val)
          setelem(val, lval)
       else
          C.tds_hash_remove(self, obj)

@@ -13,7 +13,7 @@ const char* tds_elem_get_string(tds_elem *elem);
 size_t tds_elem_get_string_size(tds_elem *elem);
 void* tds_elem_get_pointer(tds_elem *elem);
 char tds_elem_type(tds_elem *elem);
-void tds_elem_free(tds_elem *elem);
+void tds_elem_free_content(tds_elem *elem);
 
 typedef struct tds_hash_object_ tds_hash_object;
 tds_hash_object *tds_hash_object_new(void);
