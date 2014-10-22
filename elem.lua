@@ -6,40 +6,43 @@ local elem = {}
 
 local elem_ctypes = {}
 
-function elem.addctype(ttype, free_p, setfunc, getfunc)
-   elem_ctypes[ttype] = setfunc
-   elem_ctypes[torch.pointer(free_p)] = getfunc -- ffi.cast intptr_t?
+function elem.type()
 end
 
-function elem.set(elem, lelem)
+function elem.addctype(ttype, free_p, setfunc, getfunc)
+   elem_ctypes[ttype] = setfunc
+   elem_ctypes[tonumber(ffi.cast('intptr_t', free_p))] = getfunc
+end
+
+function elem.set(celem, lelem)
    if type(lelem) == 'string' then
-      C.tds_elem_set_string(elem, lelem, #lelem)
+      C.tds_elem_set_string(celem, lelem, #lelem)
    elseif type(lelem) == 'number' then
-      C.tds_elem_set_number(elem, lelem)
+      C.tds_elem_set_number(celem, lelem)
    else
-      local tname = torch.typename(lelem)
+      local tname = elem.type(lelem)
       local setfunc = tname and elem_ctypes[tname]
       if setfunc then
-         C.tds_elem_set_pointer(elem, setfunc(lelem))
+         C.tds_elem_set_pointer(celem, setfunc(lelem))
       else
-         error('unsupported key/value type (set)')
+         error(string.format('unsupported key/value type <%s> (set)', tname and tname or type(lelem)))
       end
    end
 end
 
-function elem.get(elem)
-   assert(elem)
-   local elemtype = C.tds_elem_type(elem)
+function elem.get(celem)
+   assert(celem)
+   local elemtype = C.tds_elem_type(celem)
    if elemtype == 110 then--string.byte('n') then
-      local value =  C.tds_elem_get_number(elem)
+      local value =  C.tds_elem_get_number(celem)
       return value
    elseif elemtype == 115 then--string.byte('s') then
-      local value = ffi.string(C.tds_elem_get_string(elem), C.tds_elem_get_string_size(elem))
+      local value = ffi.string(C.tds_elem_get_string(celem), C.tds_elem_get_string_size(celem))
       return value
    elseif elemtype == 112 then--string.byte('p') then
-      local lelem_p = C.tds_elem_get_pointer(elem)
-      local free_p = C.tds_elem_get_pointer_free(elem)
-      local getfunc = elem_ctypes[torch.pointer(free_p)]
+      local lelem_p = C.tds_elem_get_pointer(celem)
+      local free_p = C.tds_elem_get_pointer_free(celem)
+      local getfunc = elem_ctypes[tonumber(ffi.cast('intptr_t', free_p))]
       if getfunc then
          local value = getfunc(lelem_p)
          return value
@@ -54,6 +57,8 @@ end
 -- torch specific
 if pcall(require, 'torch') then
    local T = ffi.C
+
+   elem.type = torch.typename
 
    for _, Real in ipairs{'Double', 'Float', 'Long', 'Int', 'Short', 'Char', 'Byte'} do
       local cdefs = [[
@@ -76,8 +81,8 @@ void THRealTensor_free(THRealTensor *self);
          end,
          function(lelem_p)
             THTensor_retain(lelem_p)
-            local value = torch.pushudata(lelem_p, tensor_type_id)
-            return value
+            local lelem = torch.pushudata(lelem_p, tensor_type_id)
+            return lelem
          end
       )
 
