@@ -24,6 +24,7 @@ build = {
       ["tds.init"] = "init.lua",
       ["tds.cdefs"] = "cdefs.lua",
       ["tds.hash"] = "hash.lua",
+      ["tds.elem"] = "elem.lua",
       libtds = {
          sources = {
             "hash.c",

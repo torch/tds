@@ -1,5 +1,6 @@
 local ffi = require 'ffi'
 local tds = require 'tds.env'
+local elem = require 'tds.elem'
 local C = tds.C
 
 local hash = {}
@@ -11,16 +12,6 @@ function hash.new()
    end
    ffi.gc(self, C.tds_hash_free)
    return self
-end
-
-local function setelem(elem, lelem)
-   if type(lelem) == 'string' then
-      C.tds_elem_set_string(elem, lelem, #lelem)
-   elseif type(lelem) == 'number' then
-      C.tds_elem_set_number(elem, lelem)
-   else
-      error('string or number key/value expected')
-   end
 end
 
 local function findkey(self, lkey)
@@ -42,7 +33,7 @@ function hash:__newindex(lkey, lval)
       if lval then
          local val = C.tds_hash_object_value(obj)
          C.tds_elem_free_content(val)
-         setelem(val, lval)
+         elem.set(val, lval)
       else
          C.tds_hash_remove(self, obj)
          C.tds_hash_object_free(obj)
@@ -52,32 +43,18 @@ function hash:__newindex(lkey, lval)
          local obj = C.tds_hash_object_new()
          local key = C.tds_hash_object_key(obj)
          local val = C.tds_hash_object_value(obj)
-         setelem(val, lval)
-         setelem(key, lkey)
+         elem.set(val, lval)
+         elem.set(key, lkey)
          C.tds_hash_insert(self, obj)
       end
    end
-end
-
-local function getelem(elem)
-   assert(elem)
-   local value
-   local elemtype = C.tds_elem_type(elem)
-   if elemtype == 110 then--string.byte('n') then
-      value =  C.tds_elem_get_number(elem)
-   elseif elemtype == 115 then--string.byte('s') then
-      value = ffi.string(C.tds_elem_get_string(elem), C.tds_elem_get_string_size(elem))
-   else
-      error(string.format('value type <%s> not supported yet', elemtype))
-   end
-   return value
 end
 
 function hash:__index(lkey)
    assert(self)
    local obj = findkey(self, lkey)
    if obj ~= nil then
-      local val = getelem(C.tds_hash_object_value(obj))
+      local val = elem.get(C.tds_hash_object_value(obj))
       return val
    else
       return rawget(hash, lkey)
@@ -97,8 +74,8 @@ function hash:__pairs()
    return function()
       local obj = C.tds_hash_iterator_next(iterator)
       if obj ~= nil then
-         local key = getelem(C.tds_hash_object_key(obj))
-         local val = getelem(C.tds_hash_object_value(obj))
+         local key = elem.get(C.tds_hash_object_key(obj))
+         local val = elem.get(C.tds_hash_object_value(obj))
          return key, val
       end
    end

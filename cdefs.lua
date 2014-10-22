@@ -12,6 +12,8 @@ double tds_elem_get_number(tds_elem *elem);
 const char* tds_elem_get_string(tds_elem *elem);
 size_t tds_elem_get_string_size(tds_elem *elem);
 void* tds_elem_get_pointer(tds_elem *elem);
+typedef void (*tds_elem_pointer_free_ptrfunc)(void*);
+tds_elem_pointer_free_ptrfunc tds_elem_get_pointer_free(tds_elem *elem);
 char tds_elem_type(tds_elem *elem);
 void tds_elem_free_content(tds_elem *elem);
 

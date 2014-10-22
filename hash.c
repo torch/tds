@@ -16,6 +16,8 @@ void tds_free(void *ptr)
   free(ptr);
 }
 
+typedef void (*tds_elem_pointer_free_ptrfunc)(void*);
+
 /* basic elements contained in data structures */
 typedef struct tds_elem_ {
   union {
@@ -92,6 +94,11 @@ size_t tds_elem_get_string_size(tds_elem *elem)
 void* tds_elem_get_pointer(tds_elem *elem)
 {
   return elem->value.ptr.data;
+}
+
+tds_elem_pointer_free_ptrfunc tds_elem_get_pointer_free(tds_elem *elem)
+{
+  return elem->value.ptr.free;
 }
 
 char tds_elem_type(tds_elem *elem)
