@@ -34,6 +34,7 @@ tds_hash_object* tds_hash_search_pointer(tds_hash *hash, void* ptr);
 tds_hash_object* tds_hash_remove_pointer(tds_hash *hash, void* ptr);
 unsigned long tds_hash_size(tds_hash *hash);
 void tds_hash_remove(tds_hash *hash, tds_hash_object *obj);
+void tds_hash_retain(tds_hash *hash);
 void tds_hash_free(tds_hash* hash);
 
 typedef struct tds_hash_iterator_  tds_hash_iterator;

@@ -155,6 +155,7 @@ void tds_hash_object_free(tds_hash_object *obj)
    of elements/nodes */
 typedef struct tds_hash_ {
   tommy_hashlin *hash;
+  long refcount;
 } tds_hash;
 
 
@@ -168,6 +169,7 @@ tds_hash* tds_hash_new()
       return NULL;
     }
     tommy_hashlin_init(hash->hash);
+    hash->refcount = 1;
   }
   return hash;
 }
@@ -259,12 +261,23 @@ void tds_hash_remove(tds_hash *hash, tds_hash_object *obj)
   tommy_hashlin_remove_existing(hash->hash, &obj->hash_node);
 }
 
+void tds_hash_retain(tds_hash *hash)
+{
+  hash->refcount++;
+}
+
 void tds_hash_free(tds_hash* hash)
 {
-  tommy_hashlin_foreach(hash->hash, (void(*)(void*))tds_hash_object_free);
-  tommy_hashlin_done(hash->hash);
-  tds_free(hash->hash);
-  tds_free(hash);
+  hash->refcount--;
+  if(hash->refcount == 0)
+  {
+    tommy_hashlin_foreach(hash->hash, (void(*)(void*))tds_hash_object_free);
+    tommy_hashlin_done(hash->hash);
+    tds_free(hash->hash);
+    tds_free(hash);
+  }
+  else if(hash->refcount < 0)
+    printf("[tds hash] warning: refcount issue\n");
 }
 
 /* iterator */
