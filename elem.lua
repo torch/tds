@@ -60,6 +60,24 @@ if pcall(require, 'torch') then
 
    elem.type = torch.typename
 
+   -- even though this one looks general, one need a type check system to
+   -- make it work properly: for converting a cdata to its typename.
+   -- one way would be to use ffi.istype()
+   elem.addctype(
+      'tds_hash',
+      C.tds_hash_free,
+      function(lelem)
+         C.tds_hash_retain(lelem)
+         return lelem,  C.tds_hash_free
+      end,
+      function(lelem_p)
+         local lelem = ffi.cast('tds_hash*', lelem_p)
+         C.tds_hash_retain(lelem)
+         ffi.gc(lelem, C.tds_hash_free)
+         return lelem
+      end
+   )
+
    for _, Real in ipairs{'Double', 'Float', 'Long', 'Int', 'Short', 'Char', 'Byte'} do
       local cdefs = [[
 void THRealTensor_retain(THRealTensor *self);
