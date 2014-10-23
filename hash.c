@@ -287,6 +287,7 @@ struct tds_hash_iterator_node {
 };
 
 typedef struct tds_hash_iterator_ {
+  tds_hash *hash;
   tommy_arrayof *array;
   size_t index;
   size_t size;
@@ -329,6 +330,10 @@ tds_hash_iterator* tds_hash_iterator_new(tds_hash* hash)
   /* reset iterator */
   iterator->index = 0;
 
+  /* retain hash */
+  iterator->hash = hash;
+  tds_hash_retain(hash);
+
   return iterator;
 }
 
@@ -346,5 +351,6 @@ void tds_hash_iterator_free(tds_hash_iterator* iterator)
 {
   tommy_arrayof_done(iterator->array);
   tds_free(iterator->array);
+  tds_hash_free(iterator->hash);
   tds_free(iterator);
 }
