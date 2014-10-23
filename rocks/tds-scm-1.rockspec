@@ -27,7 +27,9 @@ build = {
       ["tds.elem"] = "elem.lua",
       libtds = {
          sources = {
-            "hash.c",
+            "tds_utils.c",
+            "tds_elem.c",
+            "tds_hash.c",
             "tommyds/tommyds/tommyhashlin.c",
             "tommyds/tommyds/tommylist.c",
             "tommyds/tommyds/tommyhash.c",

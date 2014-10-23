@@ -1,128 +1,17 @@
+#include <stdio.h>
 #include <string.h>
 #include "tommy.h"
-#include <stdio.h>
-
-/* malloc and free */
-
-/* better to replace malloc by something else dude */
-/* we do a lot of predictible small allocation, that is bad */
-void* tds_malloc(size_t size)
-{
-  return malloc(size);
-}
-
-void tds_free(void *ptr)
-{
-  free(ptr);
-}
-
-typedef void (*tds_elem_pointer_free_ptrfunc)(void*);
-
-/* basic elements contained in data structures */
-typedef struct tds_elem_ {
-  union {
-    double num;
-
-    struct {
-      char *data;
-      size_t size;
-    } str;
-
-    struct {
-      void *data;
-      void (*free)(void*);
-    } ptr;
-
-  } value;
-
-  char type;
-
-} tds_elem;
-
-
-uint32_t tds_elem_hashkey(tds_elem *elem)
-{
-  switch(elem->type) {
-    case 'n':
-      return tommy_hash_u32(0, &elem->value.num, sizeof(double));
-    case 's':
-      return tommy_hash_u32(0, elem->value.str.data, elem->value.str.size);
-    case 'p':
-      return tommy_hash_u32(0, elem->value.ptr.data, sizeof(void*));
-  }
-  return 0;
-}
-
-void tds_elem_set_number(tds_elem *elem, double num)
-{
-  elem->type = 'n';
-  elem->value.num = num;
-}
-
-void tds_elem_set_string(tds_elem *elem, const char *str, size_t size)
-{
-  elem->type = 's';
-  elem->value.str.data = tds_malloc(size);
-  if(elem->value.str.data) {
-    memcpy(elem->value.str.data, str, size);
-    elem->value.str.size = size;
-  }
-}
-
-void tds_elem_set_pointer(tds_elem *elem, void *ptr, void (*free)(void*))
-{
-  elem->type = 'p';
-  elem->value.ptr.data = ptr;
-  elem->value.ptr.free = free;
-}
-
-double tds_elem_get_number(tds_elem *elem)
-{
-  return elem->value.num;
-}
-
-const char* tds_elem_get_string(tds_elem *elem)
-{
-  return elem->value.str.data;
-}
-
-size_t tds_elem_get_string_size(tds_elem *elem)
-{
-  return elem->value.str.size;
-}
-
-void* tds_elem_get_pointer(tds_elem *elem)
-{
-  return elem->value.ptr.data;
-}
-
-tds_elem_pointer_free_ptrfunc tds_elem_get_pointer_free(tds_elem *elem)
-{
-  return elem->value.ptr.free;
-}
-
-char tds_elem_type(tds_elem *elem)
-{
-  return elem->type;
-}
-
-void tds_elem_free_content(tds_elem *elem)
-{
-  if(elem->type == 's')
-    tds_free(elem->value.str.data);
-  if(elem->type == 'p' && elem->value.ptr.free)
-    elem->value.ptr.free(elem->value.ptr.data);
-  elem->type = 0;
-}
+#include "tds_utils.h"
+#include "tds_hash.h"
 
 /* hash object */
-typedef struct tds_hash_object_ {
+struct tds_hash_object_ {
   tommy_node hash_node;
 
   tds_elem key;
   tds_elem val;
 
-} tds_hash_object;
+};
 
 tds_hash_object *tds_hash_object_new(void)
 {
@@ -153,10 +42,10 @@ void tds_hash_object_free(tds_hash_object *obj)
 /* i keep it like that for now,
    thinking about optimizing allocations
    of elements/nodes */
-typedef struct tds_hash_ {
+struct tds_hash_ {
   tommy_hashlin *hash;
   long refcount;
-} tds_hash;
+};
 
 
 tds_hash* tds_hash_new()
@@ -286,12 +175,12 @@ struct tds_hash_iterator_node {
   tds_hash_object *obj;
 };
 
-typedef struct tds_hash_iterator_ {
+struct tds_hash_iterator_ {
   tds_hash *hash;
   tommy_arrayof *array;
   size_t index;
   size_t size;
-} tds_hash_iterator;
+};
 
 static void tds_add_hash_node_to_list(void *iterator_, void *obj_)
 {
