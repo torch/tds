@@ -71,7 +71,7 @@ if pcall(require, 'torch') then
          return lelem,  C.tds_hash_free
       end,
       function(lelem_p)
-         local lelem = ffi.cast('tds_hash*', lelem_p)
+         local lelem = ffi.cast('tds_hash&', lelem_p)
          C.tds_hash_retain(lelem)
          ffi.gc(lelem, C.tds_hash_free)
          return lelem

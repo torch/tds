@@ -10,6 +10,7 @@ function hash.new()
    if self == nil then
       error('unable to allocate hash')
    end
+   self = ffi.cast('tds_hash&', self)
    ffi.gc(self, C.tds_hash_free)
    return self
 end
