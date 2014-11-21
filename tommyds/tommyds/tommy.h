@@ -27,18 +27,20 @@
 
 /** \mainpage
  * \section Introduction
- * Tommy is a C library of hashtables and tries designed to store objects with high performance.
+ * Tommy is a C library of hashtables and tries designed to store and find objects
+ * with high performance.
  *
  * It's <b>faster</b> than all the similar libraries like
  * <a href="http://www.canonware.com/rb/">rbtree</a>,
  * <a href="http://judy.sourceforge.net/">judy</a>,
- * <a href="http://code.google.com/p/google-sparsehash/">googledensehash</a>,
- * <a href="http://code.google.com/p/cpp-btree/">googlebtree</a>,
+ * <a href="http://code.google.com/p/cpp-btree/">googlebtree</a>
  * <a href="http://panthema.net/2007/stx-btree/">stxbtree</a>,
  * <a href="http://attractivechaos.awardspace.com/">khash</a>,
  * <a href="http://uthash.sourceforge.net/">uthash</a>,
  * <a href="http://www.nedprod.com/programs/portable/nedtries/">nedtrie</a>,
- * <a href="http://code.google.com/p/judyarray/">judyarray</a> and others.
+ * <a href="http://code.google.com/p/judyarray/">judyarray</a>,
+ * <a href="http://concurrencykit.org/">concurrencykit</a> and others.
+ * Only <a href="http://code.google.com/p/google-sparsehash/">googledensehash</a> is a real competitor for Tommy.
  *
  * The data structures provided are:
  *
@@ -46,7 +48,7 @@
  * - ::tommy_array, ::tommy_arrayof - A linear array.
  * It doesn't fragment the heap.
  * - ::tommy_arrayblk, ::tommy_arrayblkof - A blocked linear array.
- * It doesn't fragment the heap and minimize the space occupation.
+ * It doesn't fragment the heap and it minimizes the space occupation.
  * - ::tommy_hashtable - A fixed size chained hashtable.
  * - ::tommy_hashdyn - A dynamic chained hashtable.
  * - ::tommy_hashlin - A linear chained hashtable.
@@ -63,35 +65,39 @@
  *
  * \section Use
  *
- * All the data structures share the same interface that needs to embedded in the object to store
- * a node of type ::tommy_node.
+ * All the Tommy containers are used to store pointers to generic objects, associated to an
+ * integer value, that could be a key or a hash value.
  *
- * Inside this node is stored a pointer to the object itself in the tommy_node::data field,
- * and the key used to identify the object in the tommy_node::key field.
+ * They are semantically equivalent at the C++ <a href="http://www.cplusplus.com/reference/map/multimap/">multimap\<unsigned,void*\></a>
+ * and <a href="http://www.cplusplus.com/reference/unordered_map/unordered_multimap/">unordered_multimap\<unsigned,void*\></a>.
  *
+ * An object, to be inserted in a container, should contain a node of type ::tommy_node.
+ * Inside this node is present a pointer to the object itself in the tommy_node::data field,
+ * the key used to identify the object in the tommy_node::key field, and other fields used
+ * by the containers.
+ *
+ * This is a typical object declaration:
  * \code
  * struct object {
  *     tommy_node node;
  *     // other fields
- *     int value;
  * };
  * \endcode
  *
- * To insert an object you have to provide the address of the embedded node, the address of the
- * object and the value of the key.
+ * To insert an object in a container, you have to provide the address of the embedded node,
+ * the address of the object and the value of the key.
  * \code
+ * int key_to_insert = 1;
  * struct object* obj = malloc(sizeof(struct object));
- *
- * tommy_trie_insert(..., &obj->node, obj, obj->value);
+ * ...
+ * tommy_trie_insert(..., &obj->node, obj, key_to_insert);
  * \endcode
  *
  * To search an object you have to provide the key and call the search function.
  * \code
- * int value_to_find = 1;
- * struct object* obj = tommy_trie_search(..., value_to_find);
- * if (!obj) {
- *   // not found
- * } else {
+ * int key_to_find = 1;
+ * struct object* obj = tommy_trie_search(..., key_to_find);
+ * if (obj) {
  *   // found
  * }
  * \endcode
@@ -99,8 +105,8 @@
  * To access all the objects with the same keys you have to iterate over the bucket
  * assigned at the specified key.
  * \code
- * int value_to_find = 1;
- * tommy_trie_node* i = tommy_trie_bucket(..., value_to_find);
+ * int key_to_find = 1;
+ * tommy_trie_node* i = tommy_trie_bucket(..., key_to_find);
  *
  * while (i) {
  *     struct object* obj = i->data; // gets the object pointer
@@ -113,24 +119,27 @@
  *
  * To remove an object you have to provide the key and call the remove function.
  * \code
- * struct object* obj = tommy_trie_remove(..., value);
+ * int key_to_remove = 1;
+ * struct object* obj = tommy_trie_remove(..., key_to_remove);
  * if (obj) {
+ *     // found
  *     free(obj); // frees the object allocated memory
  * }
  * \endcode
  *
  * Dealing with hashtables, instead of the key, you have to provide the hash value of the object,
  * and a compare function able to differentiate objects with the same hash value.
- *
  * To compute the hash value, you can use the generic tommy_hash_u32() function, or the
  * specialized integer hash function tommy_inthash_u32().
  *
  * \section Performance
- * Here you can see some timings compared to other common implementations in <i>Hit</i>
- * and <i>Change</i> performance. Hit is searching an object with success, and Change is searching, removing
- * and reinsert it with a different key value.
+ * Here you can see some timings comparing with other natable implementations in the <i>Hit</i>
+ * and <i>Change</i> graphs. Hit means searching an object with a key with success,
+ * and Change means searching, removing and reinsert it with a different key value.
  *
  * Times are expressed in nanoseconds for element, and <b>lower is better</b>.
+ *
+ * To have some reference numbers, you can check <a href="https://gist.github.com/jboner/2841832">Latency numbers every programmer should know</a>.
  *
  * A complete analysis is available in the \ref benchmark page.
  *
@@ -140,9 +149,13 @@
  *
  * \section Features
  *
+ * Tommy is fast and easy to use.
+ *
  * Tommy is 100% portable in all the platforms and operating systems.
  *
  * Tommy containers support multiple elements with the same key.
+ *
+ * See the \ref design page for more details.
  *
  * \section Limitations
  *
@@ -158,14 +171,14 @@
  * Tommy doesn't provide an error reporting mechanism for a malloc() failure.
  * You have to provide it redefining malloc() if you expect it to fail.
  *
- * Tommy assumes to never have more than 2^32 elements in a container.
+ * Tommy assumes to never have more than 2^32-1 elements in a container.
  *
  * \page benchmark Tommy Benchmarks
  *
  * To evaluate Tommy performances, an extensive benchmark was done,
  * comparing it to the best libraries of data structures available:
  *
- * Specifically we have tested:
+ * Specifically we test:
  *  - ::tommy_hashtable - Fixed size chained hashtable.
  *  - ::tommy_hashdyn - Dynamic chained hashtable.
  *  - ::tommy_hashlin - Linear chained hashtable.
@@ -182,21 +195,28 @@
  *  - <a href="http://panthema.net/2007/stx-btree/">stxbtree</a> - STX Btree by Timo Bingmann.
  *  - <a href="http://www.cplusplus.com/reference/unordered_map/unordered_map/">c++unordered_map</a> - C++ STL unordered_map<> template.
  *  - <a href="http://www.cplusplus.com/reference/map/map/">c++map</a> - C++ STL map<> template.
+ *  - <a href="https://sites.google.com/site/binarysearchcube/">tesseract</a> - Binary Search Tesseract by Gregorius van den Hoven.
+ *  - <a href="https://code.google.com/p/sparsehash/source/browse/trunk/experimental/libchash.c">googlelibchash</a> - LibCHash by Craig Silverstein at Google.
+ *  - <a href="http://concurrencykit.org/">concurrencykit</a> - Non-blocking hash set by Samy Al Bahra.
+ *
+ * Note that <em>googlelibchash</em> and <em>concurrencykit</em> are not shown in the graphs
+ * because they present a lot of spikes. See the \ref notes the end.
  *
  * \section thebenchmark The Benchmark
  *
  * The benchmark consists in storing a set of N pointers to objects and
- * searching them using an integer key.
+ * searching them using integer keys.
  *
- * It's different than the simpler case of mapping integers to integers,
- * as pointers to objects are also dereferenced resulting in additional cache
- * misses. This benchmark gives a boost to implementations that store information
- * in the objects itself, as the additional cache misses are already implicit.
+ * Compared to the case of mapping integers to integers, mapping pointers to objects means that
+ * the pointers are also dereferenced, to simulate the object access,
+ * resulting in additional cache misses.
+ * This gives an advantage to implementations that store information in the objects itself,
+ * as the additional cache misses are already implicit.
  *
  * The test done are:
  *  - <b>Insert</b> Insert all the objects starting with an empty container.
  *  - <b>Change</b> Find and remove one object and reinsert it with a different key, repeated for all the objects.
- *  - <b>Hit</b> Find with success all the objects and derefence them.
+ *  - <b>Hit</b> Find with success all the objects and dereference them.
  *  - <b>Miss</b> Find with failure all the objects.
  *  - <b>Remove</b> Remove all the objects and dereference them.
  *
@@ -218,17 +238,17 @@
  * The key domain used is <strong>dense</strong>, and it's defined by the set
  * of N even numbers starting from 0x80000000 to 0x80000000+2*N.
  *
- * The use of only even numbers allows to have missing keys inside the domain for
+ * The use of even numbers allows to have missing keys inside the domain for
  * the <i>Change</i> test.
  * In such tests it's used the key domain defined by the set of N odd numbers
  * starting from 0x80000000+1 to 0x80000000+2*N+1.
- * Note that using additional keys at the corners of the domain would have pushed
- * tries and trees as they implicitly keep track of the maximum and minimum key values
- * inserted.
+ * Note that using additional keys at the corners of the domain would have given
+ * an unfair advantage to tries and trees as they implicitly keep track of the
+ * maximum and minimum key values inserted.
  *
  * The use of the 0x80000000 base, allow to test a key domain not necessarily
- * starting at 0. Using a 0 base would have pushed some tries managing it as
- * a special case.
+ * starting at 0. Using a 0 base would have given an unfair advantage to some
+ * implementation handling it as a special case.
  *
  * The tests are repeated using keys in <i>Random</i> mode and in <i>Forward</i> mode.
  * In the forward mode the key values are used in order from the lowest to the highest.
@@ -237,18 +257,15 @@
  * key incremented by 1. In random mode each object is reinserted using a completely
  * different and uncorrelated key.
  *
- * The forward order pushes tries and trees as they use the key directly and they have a
+ * The forward order advantages tries and trees as they use the key directly and they have a
  * cache advantage on using consecutive keys.
- * The random order pushes hashtables, as the hash function already randomizes the key.
- * Usually real uses case are in between, and the random one is the worst one.
+ * The random order advantages hashtables, as the hash function already randomizes the key.
+ * Usually real uses case are in between, and the random one is the worst.
  *
  * \section result Results
  *
  * The most significant tests depend on your data usage model, but if in doubt,
- * you should mostly look at <i>Random Hit</i> and <i>Random Change</i>.
- *
- * They are the most significant, because operating always with N elements
- * in the data structure and with a random patterns.
+ * you can look at <i>Random Hit</i> and <i>Random Change</i>.
  * They represent the real world worst condition.
  *
  * <img src="def/img_random_hit.png"/>
@@ -505,10 +522,10 @@
  *
  * Here some notes about the data structure tested not part of Tommy.
  *
- * \subsection cgoogledensehash Google C densehash
+ * \subsection googlelibchash Google C libchash
  * It's the C implementation located in the <i>experimental/</i> directory of the googlesparsehash archive.
  * It has very bad performances in the <i>Change</i> test for some N values.
- * See for example this <a href="other/cgoogledensehash_problem.png">graph</a> with a lot of spikes.
+ * See this <a href="other/slow_problem.png">graph</a> with a lot of spikes.
  * The C++ version doesn't suffer of this problem.
  *
  * \subsection googledensehash Google C++ densehash
@@ -532,17 +549,21 @@
  * you get one of these cases.
  * See for example this <a href="other/judy_problem.png">graph</a> with a big replicable spike at 50.000 elements.
  *
+ * \subsection ck Concurrency Kit
+ * It has very bad performances in the <i>Change</i> test for some N values.
+ * See this <a href="other/slow_problem.png">graph</a> with a lot of spikes.
+ *
  * \page multiindex Tommy Multi Indexing
  *
- * Tommy doesn't provide iterators support to iterate over all the elements inside
- * a data structure. To do that you have to manually insert any objects also in a
- * ::tommy_list, and use the list as iterator.
+ * Tommy provides only partial iterator support with the "foreach" functions.
+ * If you need real iterators you have to insert all the objects also in a ::tommy_list,
+ * and use the list as iterator.
  *
  * This technique allows to keep track of the insertion order with the list,
  * and provide more search possibilities using different data structures for
  * different search keys.
  *
- * See the next example, for an object that is inserted in a ::tommy_list, and in
+ * See the next example, for a objects inserted in a ::tommy_list, and in
  * two ::tommy_hashdyn using different keys.
  *
  * \code
@@ -567,7 +588,7 @@
  * tommy_hashdyn hash_1;
  * tommy_list list;
  *
- * // initializes the the hash tables and the list
+ * // initializes the hash tables and the list
  * tommy_hashdyn_init(&hash_0);
  * tommy_hashdyn_init(&hash_1);
  * tommy_list_init(&list);
@@ -578,9 +599,12 @@
  * struct object* obj = malloc(sizeof(struct object));
  * obj->value_0 = ...;
  * obj->value_1 = ...;
- * tommy_hashdyn_insert(&hash_0, &obj->hash_node_0, obj, tommy_inthash_u32(obj->value0)); // inserts in the first hash table
- * tommy_hashdyn_insert(&hash_1, &obj->hash_node_1, obj, tommy_inthash_u32(obj->value1)); // inserts in the second hash table
- * tommy_list_insert_tail(&list, &obj->list_node, obj); // inserts in the list
+ * // inserts in the first hash table
+ * tommy_hashdyn_insert(&hash_0, &obj->hash_node_0, obj, tommy_inthash_u32(obj->value_0));
+ * // inserts in the second hash table
+ * tommy_hashdyn_insert(&hash_1, &obj->hash_node_1, obj, tommy_inthash_u32(obj->value_1));
+ * // inserts in the list
+ * tommy_list_insert_tail(&list, &obj->list_node, obj);
  *
  * ...
  *
@@ -596,42 +620,64 @@
  *
  * ...
  *
- * // deallocates all the objects iterating the list
+ * // complex iterator logic
+ * tommy_node* i = tommy_list_head(&list);
+ * while (i != 0) {
+ *    // get the object
+ *    struct object* obj = i->data;
+ *    ...
+ *    // go to the next element
+ *    i = i->next;
+ *    ...
+ *    // go to the prev element
+ *    i = i->prev;
+ *    ...
+ * }
+ *
+ * ...
+ *
+ * // deallocates the objects iterating the list
  * tommy_list_foreach(&list, free);
  *
- * // deallocates all the hash tables
+ * // deallocates the hash tables
  * tommy_hashdyn_done(&hash_0);
  * tommy_hashdyn_done(&hash_1);
  * \endcode
  *
  * \page design Tommy Design
  *
- * Tommy is mainly designed to provide high performance, but also much care was
- * given in the definition of an useable API. In some case, even at the cost of
- * some efficency.
+ * Tommy is mainly designed to provide high performance, but much care was
+ * also given in the definition of an useable API. In case, even making some
+ * compromise with efficency.
+ *
+ * \section multi Multi key
+ * All the Tommy containers support the insertion of multiple elements with
+ * the same key.
+ *
+ * This allow the maximum flexibility, but in some cases it requires some
+ * more space to keep a list of equal elements.
  *
  * \section datapointer Data pointer
- * The tommy_node::data field is present only to provide a simpler API.
+ * The tommy_node::data field is present to provide a simpler API.
  *
  * A more memory conservative approach is to do not store this pointer, and
- * computing it from the node pointer every time considering that they are
- * always at a constant offset.
+ * computing it from the embedded node pointer every time.
  *
  * See for example the Linux Kernel declaration of container_of() at
- * http://lxr.linux.no/#linux+v2.6.37/include/linux/kernel.h#L526
+ * http://lxr.free-electrons.com/ident?i=container_of
  *
  * Although, it would have required more complexity for the user to require
  * a manual conversion from a node to the object containing the node.
  *
  * \section zero_list Zero terminated next list
- * The half 0 terminated format of ::tommy_list is present only to provide
+ * The half 0 terminated format of tommy_node::next is present to provide
  * a forward iterator terminating in 0.
  *
  * A more efficient approach is to use a double circular list, as operating on
  * nodes in a circular list doesn't requires to manage the special terminating
  * case.
  *
- * Although, it would have required too much complexity at the user for a simple
+ * Although, it would have required more complexity at the user for a simple
  * iteration.
  *
  * \section double_linked Double linked list for collisions

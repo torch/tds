@@ -117,7 +117,7 @@
  * and remove.
  *
  * \code
- * struct object* obj = tommy_trie_remove(&hashtable, compare, &value_to_remove, tommy_inthash_u32(value_to_remove));
+ * struct object* obj = tommy_hashlin_remove(&hashlin, compare, &value_to_remove, tommy_inthash_u32(value_to_remove));
  * if (obj) {
  *     free(obj); // frees the object allocated memory
  * }
@@ -130,9 +130,11 @@
  * tommy_hashlin_done(&hashlin);
  * \endcode
  *
- * Note that you cannot iterates over all the elements in the hashtable using the
- * hashtable itself. You have to insert all the elements also in a ::tommy_list,
- * and use the list to iterate. See the \ref multiindex example for more detail.
+ * If you need to iterate over all the elements in the hashtable, you can use
+ * tommy_hashlin_foreach() or tommy_hashlin_foreach_arg().
+ * If you need a more precise control with a real iteration, you have to insert
+ * all the elements also in a ::tommy_list, and use the list to iterate.
+ * See the \ref multiindex example for more detail.
  */
 
 #ifndef __TOMMYHASHLIN_H
@@ -150,7 +152,7 @@
 #define TOMMY_HASHLIN_BIT 6
 
 /**
- * Linear hashtable node.
+ * Hashtable node.
  * This is the node that you have to include inside your objects.
  */
 typedef tommy_node tommy_hashlin_node;
@@ -161,19 +163,19 @@ typedef tommy_node tommy_hashlin_node;
 #define TOMMY_HASHLIN_BIT_MAX 32
 
 /**
- * Linear chained hashtable.
+ * Hashtable container type.
+ * \note Don't use internal fields directly, but access the container only using functions.
  */
 typedef struct tommy_hashlin_struct {
 	tommy_hashlin_node** bucket[TOMMY_HASHLIN_BIT_MAX]; /**< Dynamic array of hash buckets. One list for each hash modulus. */
-	unsigned bucket_bit; /**< Bits used in the bit mask. */
-	unsigned bucket_max; /**< Number of buckets. */
-	unsigned bucket_mask; /**< Bit mask to access the buckets. */
-	unsigned bucket_mac; /**< Number of vectors allocated. */
-	unsigned low_max; /**< Low order max value. */
-	unsigned low_mask; /**< Low order mask value. */
-	unsigned split; /**< Split position. */
-	unsigned state; /**< Reallocation state. */
-	unsigned count; /**< Number of elements. */
+	tommy_uint_t bucket_bit; /**< Bits used in the bit mask. */
+	tommy_count_t bucket_max; /**< Number of buckets. */
+	tommy_count_t bucket_mask; /**< Bit mask to access the buckets. */
+	tommy_count_t low_max; /**< Low order max value. */
+	tommy_count_t low_mask; /**< Low order mask value. */
+	tommy_count_t split; /**< Split position. */
+	tommy_count_t count; /**< Number of elements. */
+	tommy_uint_t state; /**< Reallocation state. */
 } tommy_hashlin;
 
 /**
@@ -190,7 +192,7 @@ void tommy_hashlin_init(tommy_hashlin* hashlin);
 void tommy_hashlin_done(tommy_hashlin* hashlin);
 
 /**
- * Inserts an element in the the hashtable.
+ * Inserts an element in the hashtable.
  */
 void tommy_hashlin_insert(tommy_hashlin* hashlin, tommy_hashlin_node* node, void* data, tommy_hash_t hash);
 
@@ -250,6 +252,33 @@ void* tommy_hashlin_remove_existing(tommy_hashlin* hashlin, tommy_hashlin_node* 
 
 /**
  * Calls the specified function for each element in the hashtable.
+ *
+ * You can use this function to deallocate all the elements inserted.
+ *
+ * \code
+ * tommy_hashlin hashlin;
+ *
+ * // initializes the hashtable
+ * tommy_hashlin_init(&hashlin);
+ *
+ * ...
+ *
+ * // creates an object
+ * struct object* obj = malloc(sizeof(struct object));
+ *
+ * ...
+ *
+ * // insert it in the hashtable
+ * tommy_hashlin_insert(&hashlin, &obj->node, obj, tommy_inthash_u32(obj->value));
+ *
+ * ...
+ *
+ * // deallocates all the objects iterating the hashtable
+ * tommy_hashlin_foreach(&hashlin, free);
+ *
+ * // deallocates the hashtable
+ * tommy_hashlin_done(&hashlin);
+ * \endcode
  */
 void tommy_hashlin_foreach(tommy_hashlin* hashlin, tommy_foreach_func* func);
 
@@ -261,7 +290,7 @@ void tommy_hashlin_foreach_arg(tommy_hashlin* hashlin, tommy_foreach_arg_func* f
 /**
  * Gets the number of elements.
  */
-tommy_inline unsigned tommy_hashlin_count(tommy_hashlin* hashlin)
+tommy_inline tommy_count_t tommy_hashlin_count(tommy_hashlin* hashlin)
 {
 	return hashlin->count;
 }
