@@ -118,7 +118,7 @@
  * tommy_allocator_done(&alloc);
  * \endcode
  *
- * Note that you cannot iterates over all the elements in the trie using the
+ * Note that you cannot iterate over all the elements in the trie using the
  * trie itself. You have to insert all the elements also in a ::tommy_list,
  * and use the list to iterate. See the \ref multiindex example for more detail.
  */
@@ -140,12 +140,6 @@
  * The default size is choosen to exactly fit a typical cache line of 64 bytes.
  */
 #define TOMMY_TRIE_TREE_MAX (64 / sizeof(void*))
-
-/**
- * Trie node.
- * This is the node that you have to include inside your objects.
- */
-typedef tommy_node tommy_trie_node;
 
 /**
  * Trie block size.
@@ -170,12 +164,19 @@ typedef tommy_node tommy_trie_node;
 #define TOMMY_TRIE_BUCKET_MAX (1 << TOMMY_TRIE_BUCKET_BIT)
 
 /**
- * Trie optimized for cache utilization.
+ * Trie node.
+ * This is the node that you have to include inside your objects.
+ */
+typedef tommy_node tommy_trie_node;
+
+/**
+ * Trie container type.
+ * \note Don't use internal fields directly, but access the container only using functions.
  */
 typedef struct tommy_trie_struct {
 	tommy_trie_node* bucket[TOMMY_TRIE_BUCKET_MAX]; /**< First tree level. */
-	unsigned count; /**< Number of elements. */
-	unsigned node_count; /**< Number of nodes. */
+	tommy_count_t count; /**< Number of elements. */
+	tommy_count_t node_count; /**< Number of nodes. */
 	tommy_allocator* alloc; /**< Allocator for internal nodes. */
 } tommy_trie;
 
@@ -245,7 +246,7 @@ void* tommy_trie_remove_existing(tommy_trie* trie, tommy_trie_node* node);
 /**
  * Returns the number of elements.
  */
-tommy_inline unsigned tommy_trie_count(tommy_trie* trie)
+tommy_inline tommy_count_t tommy_trie_count(tommy_trie* trie)
 {
 	return trie->count;
 }

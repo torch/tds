@@ -109,7 +109,7 @@
  * To destroy the trie you have only to remove all the elements, as the trie is
  * completely inplace and it doesn't allocate memory.
  *
- * Note that you cannot iterates over all the elements in the trie using the
+ * Note that you cannot iterate over all the elements in the trie using the
  * trie itself. You have to insert all the elements also in a ::tommy_list,
  * and use the list to iterate. See the \ref multiindex example for more detail.
  */
@@ -146,7 +146,7 @@
 #define TOMMY_TRIE_INPLACE_BUCKET_MAX (1 << TOMMY_TRIE_INPLACE_BUCKET_BIT)
 
 /**
- * Inplace trie node.
+ * Trie node.
  * This is the node that you have to include inside your objects.
  */
 typedef struct tommy_trie_inplace_node_struct {
@@ -158,11 +158,12 @@ typedef struct tommy_trie_inplace_node_struct {
 } tommy_trie_inplace_node;
 
 /**
- * Inplace trie.
+ * Trie container type.
+ * \note Don't use internal fields directly, but access the container only using functions.
  */
 typedef struct tommy_trie_inplace_struct {
 	tommy_trie_inplace_node* bucket[TOMMY_TRIE_INPLACE_BUCKET_MAX]; /**< First tree level. */
-	unsigned count; /**< Number of elements. */
+	tommy_count_t count; /**< Number of elements. */
 } tommy_trie_inplace;
 
 /**
@@ -223,7 +224,7 @@ void* tommy_trie_inplace_remove_existing(tommy_trie_inplace* trie_inplace, tommy
 /**
  * Returns the number of elements.
  */
-tommy_inline unsigned tommy_trie_inplace_count(tommy_trie_inplace* trie_inplace)
+tommy_inline tommy_count_t tommy_trie_inplace_count(tommy_trie_inplace* trie_inplace)
 {
 	return trie_inplace->count;
 }
