@@ -5,7 +5,7 @@ local C = tds.C
 
 local hash = {}
 
-function hash.new()
+function hash.__new()
    local self = C.tds_hash_new()
    if self == nil then
       error('unable to allocate hash')
@@ -105,10 +105,10 @@ if pcall(require, 'torch') and torch.metatype then
       end
    end
 
-   local mt = debug.getmetatable(hash.new())
-   mt.__factory = hash.new
-   mt.__version = 0
-   torch.metatype('tds_hash', mt)
+   hash.__factory = hash.__new
+   hash.__version = 0
+
+   torch.metatype('tds_hash', hash, 'tds_hash&')
 
 end
 
@@ -119,7 +119,7 @@ setmetatable(
    {
       __index = hash,
       __newindex = hash,
-      __call = hash.new
+      __call = hash.__new
    }
 )
 tds.hash = hash_ctr
