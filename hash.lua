@@ -57,8 +57,6 @@ function hash:__index(lkey)
    if obj ~= nil then
       local val = elem.get(C.tds_hash_object_value(obj))
       return val
-   else
-      return rawget(hash, lkey)
    end
 end
 
@@ -82,21 +80,19 @@ function hash:__pairs()
    end
 end
 
-hash.pairs = hash.__pairs
-
 ffi.metatype('tds_hash', hash)
 
 if pcall(require, 'torch') and torch.metatype then
 
-   function hash:write(f)
-      f:writeLong(self:__len())
+   function hash:__write(f)
+      f:writeLong(#self)
       for k,v in pairs(self) do
          f:writeObject(k)
          f:writeObject(v)
       end
    end
 
-   function hash:read(f)
+   function hash:__read(f)
       local n = f:readLong()
       for i=1,n do
          local k = f:readObject()
