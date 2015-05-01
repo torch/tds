@@ -37,7 +37,7 @@ function elem.get(celem)
       local value =  C.tds_elem_get_number(celem)
       return value
    elseif elemtype == 115 then--string.byte('s') then
-      local value = ffi.string(C.tds_elem_get_string(celem), C.tds_elem_get_string_size(celem))
+      local value = ffi.string(C.tds_elem_get_string(celem), tonumber(C.tds_elem_get_string_size(celem)))
       return value
    elseif elemtype == 112 then--string.byte('p') then
       local lelem_p = C.tds_elem_get_pointer(celem)
