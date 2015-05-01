@@ -4,10 +4,11 @@ local elem = require 'tds.elem'
 local C = tds.C
 
 local hash = {}
+local NULL = not jit and ffi.C.NULL or nil
 
 function hash.__new()
    local self = C.tds_hash_new()
-   if self == nil then
+   if self == NULL then
       error('unable to allocate hash')
    end
    self = ffi.cast('tds_hash&', self)
@@ -30,7 +31,7 @@ end
 function hash:__newindex(lkey, lval)
    assert(self)
    local obj = findkey(self, lkey)
-   if obj ~= nil then
+   if obj ~= NULL then
       if lval then
          local val = C.tds_hash_object_value(obj)
          C.tds_elem_free_content(val)
@@ -54,7 +55,7 @@ end
 function hash:__index(lkey)
    assert(self)
    local obj = findkey(self, lkey)
-   if obj ~= nil then
+   if obj ~= NULL then
       local val = elem.get(C.tds_hash_object_value(obj))
       return val
    end
@@ -72,7 +73,7 @@ function hash:__pairs()
 
    return function()
       local obj = C.tds_hash_iterator_next(iterator)
-      if obj ~= nil then
+      if obj ~= NULL then
          local key = elem.get(C.tds_hash_object_key(obj))
          local val = elem.get(C.tds_hash_object_value(obj))
          return key, val
