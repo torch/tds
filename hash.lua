@@ -3,6 +3,12 @@ local tds = require 'tds.env'
 local elem = require 'tds.elem'
 local C = tds.C
 
+-- hash-independent temporary buffers
+local key__ = C.tds_elem_new()
+local val__ = C.tds_elem_new()
+ffi.gc(key__, C.tds_elem_free)
+ffi.gc(val__, C.tds_elem_free)
+
 local hash = {}
 local NULL = not jit and ffi.C.NULL or nil
 
@@ -16,49 +22,25 @@ function hash.__new()
    return self
 end
 
-local function findkey(self, lkey)
-   local obj
-   if type(lkey) == 'string' then
-      obj = C.tds_hash_search_string(self, lkey, #lkey)
-   elseif type(lkey) == 'number' then
-      obj = C.tds_hash_search_number(self, lkey)
-   else
-      error('string or number key expected')
-   end
-   return obj
-end
-
 function hash:__newindex(lkey, lval)
    assert(self)
-   local obj = findkey(self, lkey)
-   if obj ~= NULL then
-      if lval then
-         local val = C.tds_hash_object_value(obj)
-         C.tds_elem_free_content(val)
-         elem.set(val, lval)
-      else
-         C.tds_hash_remove(self, obj)
-         C.tds_hash_object_free(obj)
-      end
-   else
-      if lval then
-         local obj = C.tds_hash_object_new()
-         local key = C.tds_hash_object_key(obj)
-         local val = C.tds_hash_object_value(obj)
-         elem.set(val, lval)
-         elem.set(key, lkey)
-         C.tds_hash_insert(self, obj)
-      end
+   assert(lkey, 'hash index is nil')
+   elem.set(key__, lkey)
+   if lval then
+      elem.set(val__, lval)
    end
+   C.tds_hash_insert(self, key__, lval and val__ or NULL)
 end
 
 function hash:__index(lkey)
+   local lval
    assert(self)
-   local obj = findkey(self, lkey)
-   if obj ~= NULL then
-      local val = elem.get(C.tds_hash_object_value(obj))
-      return val
+   assert(lkey, 'hash index is nil')
+   elem.set(key__, lkey)
+   if C.tds_hash_search(self, key__, val__) == 0 then
+      lval = elem.get(val__)
    end
+   return lval
 end
 
 function hash:__len()
@@ -70,13 +52,11 @@ function hash:__pairs()
    assert(self)
    local iterator = C.tds_hash_iterator_new(self)
    ffi.gc(iterator, C.tds_hash_iterator_free)
-
    return function()
-      local obj = C.tds_hash_iterator_next(iterator)
-      if obj ~= NULL then
-         local key = elem.get(C.tds_hash_object_key(obj))
-         local val = elem.get(C.tds_hash_object_value(obj))
-         return key, val
+      if C.tds_hash_iterator_next(iterator, key__, val__) == 0 then
+         local lkey = elem.get(key__)
+         local lval = elem.get(val__)
+         return lkey, lval
       end
    end
 end
