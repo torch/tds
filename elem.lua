@@ -78,6 +78,21 @@ if pcall(require, 'torch') then
       end
    )
 
+   elem.addctype(
+      'tds_vec',
+      C.tds_vec_free,
+      function(lelem)
+         C.tds_vec_retain(lelem)
+         return lelem,  C.tds_vec_free
+      end,
+      function(lelem_p)
+         local lelem = ffi.cast('tds_vec&', lelem_p)
+         C.tds_vec_retain(lelem)
+         ffi.gc(lelem, C.tds_vec_free)
+         return lelem
+      end
+   )
+
    for _, Real in ipairs{'Double', 'Float', 'Long', 'Int', 'Short', 'Char', 'Byte'} do
       local cdefs = [[
 void THRealTensor_retain(THRealTensor *self);

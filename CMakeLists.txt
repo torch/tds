@@ -7,6 +7,7 @@ add_library(${PKGNAME} MODULE
   "tds_utils.c"
   "tds_elem.c"
   "tds_hash.c"
+  "tds_vec.c"
 )
 
 install(TARGETS ${PKGNAME} LIBRARY

@@ -40,5 +40,7 @@ void* tds_elem_get_pointer(tds_elem *elem);
 tds_elem_pointer_free_ptrfunc tds_elem_get_pointer_free(tds_elem *elem);
 char tds_elem_type(tds_elem *elem);
 void tds_elem_free_content(tds_elem *elem);
+void tds_elem_set_nil(tds_elem *elem);
+int tds_elem_isnil(tds_elem *elem);
 
 #endif

@@ -5,9 +5,8 @@
 
 /* malloc and free */
 
-/* better to replace malloc by something else dude */
-/* we do a lot of predictible small allocation, that is bad */
 void* tds_malloc(size_t size);
+void* tds_realloc(void *ptr, size_t size);
 void tds_free(void *ptr);
 
 #endif

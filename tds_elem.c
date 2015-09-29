@@ -154,3 +154,13 @@ void tds_elem_free_content(tds_elem *elem)
     elem->value.ptr.free(elem->value.ptr.data);
   elem->type = 0;
 }
+
+void tds_elem_set_nil(tds_elem *elem)
+{
+  elem->type = 0;
+}
+
+int tds_elem_isnil(tds_elem *elem)
+{
+  return (elem->type == 0);
+}
