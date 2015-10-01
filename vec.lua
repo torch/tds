@@ -138,6 +138,35 @@ if pcall(require, 'torch') and torch.metatype then
 
 end
 
+function vec:__tostring()
+   local str = {}
+   table.insert(str, string.format('tds_vec[%d]{', #self))
+   for k,v in ipairs(self) do
+      local kstr = string.format("%5d : ", tostring(k))
+      local vstr = tostring(v) or type(v)
+      local sp = string.rep(' ', #kstr)
+      local i = 0
+      vstr = vstr:gsub(
+         '([^\n]+)',
+         function(line)
+            i = i + 1
+            if i == 1 then
+               return kstr .. line
+            else
+               return sp .. line
+            end
+         end
+      )
+      table.insert(str, vstr)
+      if k == 20 then
+         table.insert(str, '...')
+         break
+      end
+   end
+   table.insert(str, '}')
+   return table.concat(str, '\n')
+end
+
 -- table constructor
 local vec_ctr = {}
 setmetatable(

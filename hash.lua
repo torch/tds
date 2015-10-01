@@ -89,6 +89,57 @@ if pcall(require, 'torch') and torch.metatype then
 
 end
 
+function hash:__tostring()
+   local str = {}
+   table.insert(str, string.format('tds_hash[%d]{', #self))
+   local function key2str(k)
+      if type(k) == 'string' or type(k) == 'number' then
+         return tostring(k)
+      elseif torch then
+         return torch.type(k)
+      else
+         return type(k)
+      end
+   end
+   local ksz = 0
+   local idx = 0
+   for k,v in pairs(self) do
+      ksz = math.max(ksz, #key2str(k))
+      idx = idx + 1
+      if idx == 20 then
+         break
+      end
+   end
+
+   idx = 0
+   for k,v in pairs(self) do
+      local kstr = key2str(k)
+      kstr = string.format("%s%s : ", kstr, string.rep(' ', ksz-#kstr))
+      local vstr = tostring(v) or type(v)
+      local sp = string.rep(' ', ksz+3)
+      local i = 0
+      vstr = vstr:gsub(
+         '([^\n]+)',
+         function(line)
+            i = i + 1
+            if i == 1 then
+               return kstr .. line
+            else
+               return sp .. line
+            end
+         end
+      )
+      table.insert(str, vstr)
+      idx = idx + 1
+      if idx == 20 then
+         table.insert(str, '...')
+         break
+      end
+   end
+   table.insert(str, '}')
+   return table.concat(str, '\n')
+end
+
 -- table constructor
 local hash_ctr = {}
 setmetatable(
