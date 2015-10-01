@@ -64,7 +64,7 @@ if pcall(require, 'torch') then
    -- make it work properly: for converting a cdata to its typename.
    -- one way would be to use ffi.istype()
    elem.addctype(
-      'tds_hash',
+      'tds.Hash',
       C.tds_hash_free,
       function(lelem)
          C.tds_hash_retain(lelem)
@@ -79,7 +79,7 @@ if pcall(require, 'torch') then
    )
 
    elem.addctype(
-      'tds_vec',
+      'tds.Vec',
       C.tds_vec_free,
       function(lelem)
          C.tds_vec_retain(lelem)

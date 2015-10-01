@@ -85,13 +85,13 @@ if pcall(require, 'torch') and torch.metatype then
    hash.__factory = hash.__new
    hash.__version = 0
 
-   torch.metatype('tds_hash', hash, 'tds_hash&')
+   torch.metatype('tds.Hash', hash, 'tds_hash&')
 
 end
 
 function hash:__tostring()
    local str = {}
-   table.insert(str, string.format('tds_hash[%d]{', #self))
+   table.insert(str, string.format('tds.Hash[%d]{', #self))
    local function key2str(k)
       if type(k) == 'string' or type(k) == 'number' then
          return tostring(k)
@@ -151,5 +151,6 @@ setmetatable(
    }
 )
 tds.hash = hash_ctr
+tds.Hash = hash_ctr
 
 return hash_ctr

@@ -134,13 +134,13 @@ if pcall(require, 'torch') and torch.metatype then
    vec.__factory = vec.__new
    vec.__version = 0
 
-   torch.metatype('tds_vec', vec, 'tds_vec&')
+   torch.metatype('tds.Vec', vec, 'tds_vec&')
 
 end
 
 function vec:__tostring()
    local str = {}
-   table.insert(str, string.format('tds_vec[%d]{', #self))
+   table.insert(str, string.format('tds.Vec[%d]{', #self))
    for k,v in ipairs(self) do
       local kstr = string.format("%5d : ", tostring(k))
       local vstr = tostring(v) or type(v)
@@ -178,5 +178,6 @@ setmetatable(
    }
 )
 tds.vec = vec_ctr
+tds.Vec = vec_ctr
 
 return vec_ctr
