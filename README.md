@@ -1,78 +1,239 @@
 Data structures which do not rely on Lua memory allocator, nor being
 limited by Lua garbage collector.
 
-Under the hood, this is a LuaJIT FFI interface to [klib](http://attractivechaos.github.io/klib).
+Only C types can be stored: supported types are currently number, strings,
+the data structures themselves (see [nesting](#tds.nesting): e.g. it is
+possible to have a Hash containing a Hash or a Vec), and torch tensors and
+storages. All data structures can store heterogeneous objects, and support
+[torch serialization](#tds.serialization).
 
-## Example
+It is easy to extend the support to [other C types](#tds.extend).
 
-```Lua
-local tds = require 'tds'
+Note that `tds` relies currently on FFI, and works both with
+[luajit](http://www.luajit.org) or [Lua 5.2](http://www.lua.org), provided
+the latter is installed with
+[luaffi](https://github.com/facebook/luaffifb). The dependency on FFI will
+be removed in the future.
 
--------------------------------------------------
--- BASIC
--------------------------------------------------
+## d = tds.Hash() ##
 
-local h = tds.hash()
+Creates a hash table which implements the lua operators `[key]`, `#`
+and `pairs()`, and in very similar way than lua tables.
 
--- set
-h.foo = "bar"
-h["scm-1"] = "git"
+A hash can contain any element (either as key or value) supported by `tds`.
 
--- the key can be a number
-h[1] = "hey"
--- the value can be a number too
-h.count = 1234
+### d[key] = value ###
 
--- get
-print(h.foo)      -- "bar"
-print(h["scm-1"]) -- "git"
-print(h.count)    -- 1234
+Store the given (`key`, `value`) pair in the hash table. If `value` is
+`nil`, remove the `key` if it exists.
 
--- length
-print(#h)         -- 4
+### d[key] ###
 
--- iterator
-for k,v in pairs(h) do
-    print(k, v)
+Returns the `value` at the given `key`, and `nil` if the `key` does not exist in the hash table.
+
+### #d ###
+
+Returns the number of key-value pairs in the hash table. Note that this acts different than lua tables, the latter
+returning the number of elements stored in numbered indices starting from 1.
+
+### pairs(d) ###
+
+Returns an iterator over the hash table `d`. The iterator returns a
+key-value pair at each step, or nil if reaching the end.  Typical usage
+will be:
+```lua
+for k,v in pairs(d) do
+  -- <do something>
 end
+```
 
--- unset
-h.foo = nil
-print(h.foo)      -- nil
+## d = tds.Vec(...) ##
 
--------------------------------------------------
--- ADVANCED
--------------------------------------------------
+Creates a vector of elements indexed by numbers starting from 1. If arguments are passed at construction, the vector
+will be filled with these arguments.
 
--- you can nest hashes, i.e use another hash as value
-local misc = tds.hash()
-misc.hello = "world"
+A vector can contain any element (as value) supported by `tds`, as well as the `nil` value.
 
-h.baz = misc
-print(h.baz.hello) -- "world"
+### d[index] = value ###
 
-if pcall(require, 'torch') then
-    -- Torch7
+Store the given `value` at the given `index` (which must be a positive
+number). If the index is larger than the current size of the vector, the
+vector will be automatically resized. `value` may be `nil`.
 
-    -- tds plays nice with Torch since you can set a tensor as value
-    h.weights = torch.randn(3, 2)
-    print(h.weights) -- (...) [torch.DoubleTensor of dimension 3x2]
+### d[index] ###
 
-    -- you can also serialize/unserialize with Torch utils
-    local f = torch.MemoryFile("rw"):binary()
+Returns the `value` at the given `index` or `nil` if it does not exist.
 
-    -- serialize
-    f:writeObject(h)
+### #d ###
 
-    -- unserialize
-    f:seek(1)
-    local clone = f:readObject()
+Returns the current size of the vector (note that it includes `nil` values, which are not treated as holes!).
 
-    assert(#h == #clone)
+### d:resize(size) ###
 
-    f:close()
+Resize the current vector to the given size. If the size is larger than the current size, the vector will be filled with `nil` values.
 
-    -- Note: you can also use the high level interface to save on disk:
-    torch.save("dump.bin", h)
+### d:insert([index], value) ###
+
+Insert `value` in the vector, at position `index`, shifting up all elements
+above `index`. If `index` is not provided, insert the element at the end of
+the vector.
+
+### d:remove([index]) ###
+
+Remove the element at position `index`, shifting down all elements above
+`index`. If `index` is not provided, remove the last element of the vector.
+
+### ipairs(d) ###
+
+Returns an iterator over the vector `d`. The iterator returns a index-value
+pair at each step, or nil if reaching the end.  Typical usage will be:
+```lua
+for i,v in pairs(d) do
+  -- <do something>
 end
+```
+
+### pairs(d) ###
+
+Alias for ipairs(d).
+
+<a name="tds.serialization"/>
+## Serialization ##
+
+All `tds` data structures support torch serialization. Example:
+
+```lua
+tds = require 'tds'
+require 'torch'
+
+-- create a vector containing heterogeneous data
+d = tds.Vec(4, 5, torch.rand(3), nil, "hello world")
+
+-- serialize in a buffer
+f = torch.MemoryFile("rw")
+f:writeObject(d)
+
+-- unserialize
+f:seek(1)
+print(f:readObject())
+```
+
+The example will output:
+```
+tds.Vec[5]{
+    1 : 4
+    2 : 5
+    3 :  0.1665
+         0.8750
+         0.7525
+        [torch.DoubleTensor of size 3]
+
+    4 : nil
+    5 : hello world
+}
+```
+
+<a name="tds.nesting"/>
+## Nesting ##
+
+Nesting is supported in `tds`. However, __reference loops are prohibited__, and
+will lead to leaks if used.
+
+Example:
+
+```lua
+
+tds = require 'tds'
+require 'torch'
+
+-- create a vector containing heterogeneous data
+d = tds.Vec(4, 5, torch.rand(3), tds.Hash(), "hello world")
+
+-- fill up the hash table:
+d[4].foo = "bar"
+d[4][6] = torch.rand(3)
+d[4].stuff = tds.Vec("how", "are", "you", "doing")
+
+print(d)
+```
+
+This example will output:
+```
+tds.Vec[5]{
+    1 : 4
+    2 : 5
+    3 :  0.1958
+         0.5663
+         0.2777
+        [torch.DoubleTensor of size 3]
+
+    4 : tds.Hash[3]{
+        foo   : bar
+        6     :  0.0105
+                 0.7496
+                 0.5241
+                [torch.DoubleTensor of size 3]
+
+        stuff : tds.Vec[4]{
+                    1 : how
+                    2 : are
+                    3 : you
+                    4 : doing
+                }
+        }
+    5 : hello world
+}
+```
+
+<a name="tds.extend"/>
+## Extending to other C types ##
+
+`tds` provides a way to extend to your own C types using the submodule
+`tds.elem`:
+
+```lua
+local elem = require 'tds.elem'
+```
+
+### elem.type(obj) ###
+
+`tds` typechecking is achieved using this function. You can override it for
+your own purposes. If torch is detected, `tds` will set `elem.type` to
+`torch.typename()`, so in general (if you are using torch!) you should not
+worry about this part.
+
+### elem.addctype(ttype, free_p, setfunc, getfunc) ###
+
+Add a new C type into `tds`:
+  - `ttype` must be the typename understood by the current `elem.type()` function.
+  - `free_p` is a C FFI pointer to a destructor of the C object.
+  - `setfunc(luaobj)` takes a __lua object__ and returns a FFI C pointer on this object, as well as a FFI function `free_p` to free this object.
+  - `getfunc(cpointer)` takes a __C FFI pointer__ and returns a lua object of the corresponding object.
+
+One must be careful to handle properly reference counting and garbage collection in `setfunc()` and `getfunc()`:
+  - `setfunc()` will convert a lua object into a C pointer which will be
+    stored into the data structure: the reference count on this object must
+    be increased. When removed from the data structure, `tds` will call the
+    given `free_p()` function.
+  - `getfunc()` will convert a C pointer and push it into lua memory space:
+    one must again increase properly the reference count on this object,
+    and make sure lua will garbage collect it properly.
+
+Here is a typical example showing how support for `tds.Hash` elements is supported:
+
+```lua
+   elem.addctype(
+      'tds.Hash',
+      C.tds_hash_free,
+      function(lelem)
+         C.tds_hash_retain(lelem)
+         return lelem,  C.tds_hash_free
+      end,
+      function(lelem_p)
+         local lelem = ffi.cast('tds_hash&', lelem_p)
+         C.tds_hash_retain(lelem)
+         ffi.gc(lelem, C.tds_hash_free)
+         return lelem
+      end
+   )
 ```
