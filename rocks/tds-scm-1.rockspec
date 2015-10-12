@@ -21,6 +21,7 @@ build = {
    type = "cmake",
    variables = {
       CMAKE_BUILD_TYPE="Release",
+      CMAKE_PREFIX_PATH="$(LUA_BINDIR)/..",
       LUA_PATH="$(LUADIR)",
       LUA_CPATH="$(LIBDIR)"
    }

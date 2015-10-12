@@ -1,10 +1,13 @@
-#include <stdio.h>
 #include <string.h>
 
 #include "klib/khash.h"
 #include "tds_utils.h"
 #include "tds_elem.h"
 #include "tds_hash.h"
+
+#if HAS_TORCH
+#include "THAtomic.h"
+#endif
 
 static uint32_t tds_elem_hashkey_(tds_elem elem)
 {
@@ -21,7 +24,7 @@ KHASH_INIT(tds_elem, tds_elem, tds_elem, 1, tds_elem_hashkey_, tds_elem_isequal_
 /* hash structure */
 struct tds_hash_ {
   khash_t(tds_elem) *hash;
-  long refcount;
+  int refcount;
 };
 
 
@@ -87,13 +90,21 @@ unsigned long tds_hash_size(tds_hash *hash)
 
 void tds_hash_retain(tds_hash *hash)
 {
+#if HAS_TORCH
+  THAtomicIncrementRef(&hash->refcount);
+#else
   hash->refcount++;
+#endif
 }
 
 void tds_hash_free(tds_hash* hash)
 {
+#if HAS_TORCH
+  if(THAtomicDecrementRef(&hash->refcount))
+#else
   hash->refcount--;
   if(hash->refcount == 0)
+#endif
   {
     khint_t k;
     for(k = kh_begin(hash->hash); k != kh_end(hash->hash); ++k) {
@@ -105,8 +116,6 @@ void tds_hash_free(tds_hash* hash)
     kh_destroy(tds_elem, hash->hash);
     tds_free(hash);
   }
-  else if(hash->refcount < 0)
-    printf("[tds hash] warning: refcount issue\n");
 }
 
 /* iterator */

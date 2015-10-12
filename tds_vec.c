@@ -1,7 +1,10 @@
-#include <stdio.h> /* for printf */
 #include <string.h> /* for memmove */
 #include "tds_utils.h"
 #include "tds_vec.h"
+
+#if HAS_TORCH
+#include "THAtomic.h"
+#endif
 
 /* note: size_t >= 0 */
 
@@ -101,20 +104,26 @@ int tds_vec_resize(tds_vec *vec, size_t size)
 
 void tds_vec_retain(tds_vec *vec)
 {
+#if HAS_TORCH
+  THAtomicIncrementRef(&vec->refcount);
+#else
   vec->refcount++;
+#endif
 }
 
 void tds_vec_free(tds_vec* vec)
 {
   size_t k;
+#if HAS_TORCH
+  if(THAtomicDecrementRef(&vec->refcount))
+#else
   vec->refcount--;
   if(vec->refcount == 0)
+#endif
   {
     for(k = 0; k < vec->n; k++)
       tds_elem_free_content(&vec->data[k]);
     tds_free(vec->data);
     tds_free(vec);
   }
-  else if(vec->refcount < 0)
-    printf("[tds vec] warning: refcount issue\n");
 }
