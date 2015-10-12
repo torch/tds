@@ -87,6 +87,12 @@ if pcall(require, 'torch') and torch.metatype then
 
    torch.metatype('tds.Hash', hash, 'tds_hash&')
 
+   -- legacy support (loading old models)
+   local old_hash = {
+      __factory = hash.__new,
+   }
+   torch.metatype('tds_hash', old_hash)
+
 end
 
 function hash:__tostring()
