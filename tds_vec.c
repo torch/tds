@@ -12,7 +12,6 @@
 
 struct tds_vec_ {
   tds_elem *data;
-  size_t size; /* actual allocated size */
   size_t n; /* number of elements */
   size_t allocn; /* number of allocated elements */
   int refcount;
