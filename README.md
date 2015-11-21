@@ -125,6 +125,21 @@ In the FFI case, `compare` might be a FFI callback, but will also lead to a
 slow sort, FFI callbacks being slow.  Fastest speed are obtained when
 `compare` is a true compiled C function loaded through FFI.
 
+<a name="tds.Vec.concat"/>
+### d:concat([sep, i, j]) ###
+
+Concat all vector elements into a single string. Fails if an element cannot
+be converted via `tostring()`.
+
+`sep` is an optional separator string inserted between each elements.
+
+`i` and `j` define an optional range (by default `i=1` and `j` is the size
+of the vector).
+
+### d:concatstorage(sep) ###
+
+As [concat()](#tds.Vec.concat), but returns a `torch.CharStorage()` instead.
+
 ### ipairs(d) ###
 
 Returns an iterator over the vector `d`. The iterator returns a index-value

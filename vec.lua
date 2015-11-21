@@ -45,6 +45,43 @@ function mt:resize(size)
    C.tds_vec_resize(self, size)
 end
 
+if pcall(require, 'torch') then
+   function mt:concatstorage(sep, i, j)
+      i = i or 1
+      j = j or #self
+      local sepsize = 0
+      if sep then
+         sep = torch.CharStorage():string(sep)
+         sepsize = sep:size()
+      end
+      local buffer = torch.CharStorage()
+      local size = 0
+      for k=i,j do
+         local str = tostring(self[k])
+         assert(str, 'vector elements must return a non-nil tostring()')
+         str = torch.CharStorage():string(str)
+         local strsize = str:size()
+         if size+strsize+sepsize > buffer:size() then
+            buffer:resize(math.max(buffer:size()*1.5, size+strsize+sepsize))
+         end
+         if sep and size > 0 then
+            local view = torch.CharStorage(buffer, size+1, sepsize)
+            view:copy(sep)
+            size = size + sepsize
+         end
+         local view = torch.CharStorage(buffer, size+1, strsize)
+         view:copy(str)
+         size = size + strsize
+      end
+      buffer:resize(size)
+      return buffer
+   end
+
+   function mt:concat(sep, i, j)
+      return self:concatstorage(sep, i, j):string()
+   end
+end
+
 function mt:sort(compare)
    if type(compare) == 'function' then
       local function compare__(cval1, cval2)
@@ -131,7 +168,7 @@ function vec:__index(lkey)
       if method then
          return method
       else
-         error('invalid key: number or "insert" or "remove" or "resize" expected')
+         error('invalid key (number) or method name')
       end
    end
    return lval
