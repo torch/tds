@@ -47,6 +47,10 @@ for k,v in pairs(d) do
 end
 ```
 
+Note: as for Lua standard tables, the iterator behavior is undefined if a
+new key is inserted in the hash while iterating. Modifying existing keys is
+however allowed.
+
 ## d = tds.Vec(...) ##
 
 Creates a vector of elements indexed by numbers starting from 1. If arguments are passed at construction, the vector

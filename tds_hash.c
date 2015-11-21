@@ -126,6 +126,22 @@ struct tds_hash_iterator_ {
 
 tds_hash_iterator* tds_hash_iterator_new(tds_hash* hash)
 {
+  /* workaround possible hash expand when calling
+     kh_put on an existing key while iterating
+     (see kh_put)
+  */
+  {
+    khash_t(tds_elem) *h = hash->hash;
+    if(h->n_occupied >= h->upper_bound) { /* update the hash table */
+      if (h->n_buckets > (h->size<<1)) {
+        if (kh_resize_tds_elem(h, h->n_buckets - 1) < 0) { /* clear "deleted" elements */
+          return NULL;
+        }
+      } else if (kh_resize_tds_elem(h, h->n_buckets + 1) < 0) { /* expand the hash table */
+        return NULL;
+      }
+    }
+  }
   tds_hash_iterator *iterator = tds_malloc(sizeof(tds_hash_iterator));
   if(!iterator)
     return NULL;
