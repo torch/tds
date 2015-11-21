@@ -42,19 +42,25 @@ tds_hash* tds_hash_new(void)
   return hash;
 }
 
-void tds_hash_insert(tds_hash *hash, tds_elem *key, tds_elem *val)
+int tds_hash_insert(tds_hash *hash, tds_elem *key, tds_elem *val)
 {
-  if(!val)
+  if(!val) {
     tds_hash_remove(hash, key);
+    return 0;
+  }
   else {
     int ret;
     khiter_t k = kh_put(tds_elem, hash->hash, *key, &ret);
-    if(ret == 0) { /* key present */
+    if(ret == -1) {
+      return 1; /* out of memory */
+    }
+    else if(ret == 0) { /* key present */
       tds_elem_free_content(key); /* as it has not been used */
       tds_elem_free_content(&kh_val(hash->hash, k)); /* as it will be overwritten */
     }
     kh_val(hash->hash, k) = *val;
   }
+  return 0;
 }
 
 int tds_hash_search(tds_hash *hash, tds_elem *key, tds_elem *val)

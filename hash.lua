@@ -29,7 +29,9 @@ function hash:__newindex(lkey, lval)
    if lval then
       elem.set(val__, lval)
    end
-   C.tds_hash_insert(self, key__, lval and val__ or NULL)
+   if C.tds_hash_insert(self, key__, lval and val__ or NULL) == 1 then
+      error('out of memory')
+   end
 end
 
 function hash:__index(lkey)
