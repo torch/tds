@@ -15,12 +15,18 @@ the latter is installed with
 [luaffi](https://github.com/facebook/luaffifb). The dependency on FFI will
 be removed in the future.
 
-## d = tds.Hash() ##
+<a name="tds.Hash"/>
+## d = tds.Hash([tbl]) ##
 
 Creates a hash table which implements the lua operators `[key]`, `#`
 and `pairs()`, and in very similar way than lua tables.
 
 A hash can contain any element (either as key or value) supported by `tds`.
+
+If a lua table `tbl` is provided, the Hash will be filled up with
+corresponding elements. Tables inside the `tbl` will be also converted
+(recursively) to [tds.Vec](#tds.Vec) (if they contain only contiguous
+number keys starting from 1) or [tds.Hash](#tds.Hash) otherwise.
 
 ### d[key] = value ###
 
@@ -51,12 +57,21 @@ Note: as for Lua standard tables, the iterator behavior is undefined if a
 new key is inserted in the hash while iterating. Modifying existing keys is
 however allowed.
 
-## d = tds.Vec(...) ##
+<a name="tds.Vec"/>
+## d = tds.Vec([... || tbl]) ##
 
-Creates a vector of elements indexed by numbers starting from 1. If arguments are passed at construction, the vector
-will be filled with these arguments.
+Creates a vector of elements indexed by numbers starting from 1. If a
+single lua table `tbl` (or several arguments) is (are) passed at
+construction, the vector will be filled with the lua table contents (or the
+given arguments).
 
-A vector can contain any element (as value) supported by `tds`, as well as the `nil` value.
+If provided, `tbl` must contain only contiguous number keys starting at 1.
+Tables inside the `tbl` (or passed as arguments) will also be converted
+(recursively) to [tds.Vec](#tds.Vec) (if they contain only contiguous
+number keys starting from 1) or [tds.Hash](#tds.Hash) otherwise.
+
+A vector can contain any element (as value) supported by `tds`, as well as
+the `nil` value.
 
 ### d[index] = value ###
 

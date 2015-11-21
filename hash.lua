@@ -12,12 +12,46 @@ ffi.gc(val__, C.tds_elem_free)
 local hash = {}
 local NULL = not jit and ffi.C.NULL or nil
 
-function hash.__new()
+local function isvec(tbl)
+   local n = 0
+   for k, v in pairs(tbl) do
+      n = n + 1
+   end
+   return n == #tbl
+end
+
+local function fill(self, tbl)
+   for key, val in pairs(tbl) do
+      if type(key) == 'table' then
+         if isvec(key) then
+            key = tds.Vec(key)
+         else
+            key = tds.Hash(key)
+         end
+      end
+      if type(val) == 'table' then
+         if isvec(val) then
+            self[key] = tds.Vec(val)
+         else
+            self[key] = tds.Hash(val)
+         end
+      else
+         self[key] = val
+      end
+   end
+end
+
+function hash:__new(...) -- beware of the :
    local self = C.tds_hash_new()
    if self == NULL then
       error('unable to allocate hash')
    end
    self = ffi.cast('tds_hash&', self)
+   if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
+      fill(self, select(1, ...))
+   elseif select('#', ...) > 0 then
+      error('lua table or nothing expected')
+   end
    ffi.gc(self, C.tds_hash_free)
    return self
 end

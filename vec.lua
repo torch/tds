@@ -45,6 +45,29 @@ function mt:resize(size)
    C.tds_vec_resize(self, size)
 end
 
+local function isvec(tbl)
+   local n = 0
+   for k, v in pairs(tbl) do
+      n = n + 1
+   end
+   return n == #tbl
+end
+
+local function fill(self, tbl)
+   assert(isvec(tbl), 'lua table with number keys (1...N) expected')
+   for key, val in ipairs(tbl) do
+      if type(val) == 'table' then
+         if isvec(val) then
+            self[key] = tds.Vec(val)
+         else
+            self[key] = tds.Hash(val)
+         end
+      else
+         self[key] = val
+      end
+   end
+end
+
 function vec:__new(...) -- beware of the :
    local self = C.tds_vec_new()
    if self == NULL then
@@ -52,11 +75,10 @@ function vec:__new(...) -- beware of the :
    end
    self = ffi.cast('tds_vec&', self)
    ffi.gc(self, C.tds_vec_free)
-   if select('#', ...) > 0 then
-      for key=1,select('#', ...) do
-         local val = select(key, ...)
-         self[key] = val
-      end
+   if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
+      fill(self, select(1, ...))
+   elseif select('#', ...) > 0 then
+      fill(self, {...})
    end
    return self
 end
