@@ -26,7 +26,7 @@ int tds_elem_isnil(tds_elem *elem);
 typedef struct tds_hash_ tds_hash;
 tds_hash* tds_hash_new(void);
 unsigned long tds_hash_size(tds_hash *hash);
-void tds_hash_insert(tds_hash *hash, tds_elem *key, tds_elem *val);
+int tds_hash_insert(tds_hash *hash, tds_elem *key, tds_elem *val);
 int tds_hash_search(tds_hash *hash, tds_elem *key, tds_elem *val);
 int tds_hash_remove(tds_hash *hash, tds_elem *key);
 void tds_hash_retain(tds_hash *hash);
