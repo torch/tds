@@ -102,6 +102,29 @@ the vector.
 Remove the element at position `index`, shifting down all elements above
 `index`. If `index` is not provided, remove the last element of the vector.
 
+### d:sort(compare) ###
+
+Sort the vector in-place, according to the given `compare` function.
+
+Compare can be either a lua function or a C function.
+
+In the lua case, `compare` is a function which takes two vector elements,
+and returns true when the first is less than the second.
+
+If the C case, `compare` must be a FFI type `int (*compare)(const tds_elem *, const tds_elem *)`.
+It must return an integer less than, equal to, or greater than zero if the
+first argument is considered to be respectively less than, equal to, or
+greater than the second. See the include file `tds_elem.h` for more details
+about the `tds_elem` structure.
+
+Note that having `compare` as a lua function will lead to a (relatively)
+slow sort: elements of the vector will need to be moved in the lua userland
+(and thus handled by the GC) in order to be compared.
+
+In the FFI case, `compare` might be a FFI callback, but will also lead to a
+slow sort, FFI callbacks being slow.  Fastest speed are obtained when
+`compare` is a true compiled C function loaded through FFI.
+
 ### ipairs(d) ###
 
 Returns an iterator over the vector `d`. The iterator returns a index-value

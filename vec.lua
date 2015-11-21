@@ -45,6 +45,27 @@ function mt:resize(size)
    C.tds_vec_resize(self, size)
 end
 
+function mt:sort(compare)
+   if type(compare) == 'function' then
+      local function compare__(cval1, cval2)
+         local lval1, lval2
+         if C.tds_elem_isnil(cval1) == 0 then
+            lval1 = elem.get(cval1)
+         end
+         if C.tds_elem_isnil(cval2) == 0 then
+            lval2 = elem.get(cval2)
+         end
+         return compare(lval1, lval2) and -1 or 1
+      end
+      local cb_compare__ = ffi.cast('int (*)(tds_elem*, tds_elem*)', compare__)
+      C.tds_vec_sort(self, cb_compare__)
+      cb_compare__:free()
+   else -- you must know what you are doing
+      assert(compare ~= nil, 'compare function must be a lua or C function')
+      C.tds_vec_sort(self, compare)
+   end
+end
+
 local function isvec(tbl)
    local n = 0
    for k, v in pairs(tbl) do

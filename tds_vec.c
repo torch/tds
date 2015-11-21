@@ -101,6 +101,11 @@ int tds_vec_resize(tds_vec *vec, size_t size)
   return 0;
 }
 
+void tds_vec_sort(tds_vec *vec, int (*compare)(const tds_elem *elem1, const tds_elem *elem2))
+{
+  qsort(vec->data, vec->n, sizeof(tds_elem), (int (*)(const void*, const void*))(compare));
+}
+
 void tds_vec_retain(tds_vec *vec)
 {
 #if HAS_TORCH

@@ -47,6 +47,7 @@ int tds_vec_set(tds_vec *vec, size_t idx, tds_elem *val);
 int tds_vec_get(tds_vec *vec, size_t idx, tds_elem *val);
 int tds_vec_remove(tds_vec *vec, size_t idx);
 int tds_vec_resize(tds_vec *vec, size_t size);
+void tds_vec_sort(tds_vec *vec, int (*compare)(const tds_elem *elem1, const tds_elem *elem2));
 void tds_vec_retain(tds_vec *vec);
 void tds_vec_free(tds_vec* vec);
 
