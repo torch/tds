@@ -8,8 +8,6 @@
 
 /* note: size_t >= 0 */
 
-#define BLOCK_SIZE 1024
-
 struct tds_vec_ {
   tds_elem *data;
   size_t n; /* number of elements */
@@ -83,7 +81,8 @@ int tds_vec_resize(tds_vec *vec, size_t size)
     return 0;
   } else if(size > vec->n) {
     if(size > vec->allocn) {
-      size_t allocn = size + BLOCK_SIZE; /* always allocate at least BLOCK_SIZE at each time */
+      /* always allocate at least 1.5x more at each time */
+      size_t allocn = (vec->allocn*1.5 > size ? vec->allocn*1.5 : size);
       tds_elem *data = tds_realloc(vec->data, sizeof(tds_elem)*allocn);
       if(!data)
         return 1;
