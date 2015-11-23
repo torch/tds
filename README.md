@@ -136,7 +136,7 @@ be converted via `tostring()`.
 `i` and `j` define an optional range (by default `i=1` and `j` is the size
 of the vector).
 
-### d:concatstorage(sep) ###
+### d:concatstorage([sep, i, j]) ###
 
 As [concat()](#tds.Vec.concat), but returns a `torch.CharStorage()` instead.
 
