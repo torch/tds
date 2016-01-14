@@ -70,7 +70,7 @@ int tds_vec_remove(tds_vec *vec, size_t idx)
   tds_elem_free_content(&vec->data[idx]);
   if(vec->n-idx-1 > 0)
     memmove(vec->data+idx, vec->data+idx+1, sizeof(tds_elem)*(vec->n-idx-1));
-  tds_vec_resize(vec, vec->n-1);
+  vec->n--;
   return 0;
 }
 
