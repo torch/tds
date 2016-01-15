@@ -66,6 +66,8 @@ uint32_t tds_elem_hashkey(tds_elem *elem)
   switch(elem->type) {
     case 'n':
       return fnv32_buf(&elem->value.num, sizeof(double), 0);
+    case 'b':
+      return fnv32_buf(&elem->value.flag, sizeof(bool), 0);
     case 's':
       return fnv32_buf(elem->value.str.data, elem->value.str.size, 0);
     case 'p':
@@ -81,6 +83,8 @@ int tds_elem_isequal(tds_elem *elem1, tds_elem *elem2)
   switch(elem1->type) {
     case 'n':
       return elem1->value.num == elem2->value.num;
+    case 'b':
+      return elem1->value.flag == elem2->value.flag;
     case 's':
       if(elem1->value.str.size != elem2->value.str.size)
         return 0;
@@ -97,6 +101,12 @@ void tds_elem_set_number(tds_elem *elem, double num)
 {
   elem->type = 'n';
   elem->value.num = num;
+}
+
+void tds_elem_set_boolean(tds_elem *elem, bool flag)
+{
+  elem->type = 'b';
+  elem->value.flag = flag;
 }
 
 void tds_elem_set_string(tds_elem *elem, const char *str, size_t size)
@@ -119,6 +129,11 @@ void tds_elem_set_pointer(tds_elem *elem, void *ptr, void (*free)(void*))
 double tds_elem_get_number(tds_elem *elem)
 {
   return elem->value.num;
+}
+
+bool tds_elem_get_boolean(tds_elem *elem)
+{
+  return elem->value.flag;
 }
 
 const char* tds_elem_get_string(tds_elem *elem)

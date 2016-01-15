@@ -23,7 +23,7 @@ function mt:insert(...)
    end
    assert(self)
    assert(type(lkey) == 'number' and lkey > 0, 'positive number expected as key')
-   if lval then
+   if lval or type(lval) == 'boolean' then
       elem.set(val__, lval)
    else
       C.tds_elem_set_nil(val__)
@@ -144,7 +144,7 @@ end
 function vec:__newindex(lkey, lval)
    assert(self)
    assert(type(lkey) == 'number' and lkey > 0, 'positive number expected as key')
-   if lval then
+   if lval or type(lval) == 'boolean' then
       elem.set(val__, lval)
    else
       C.tds_elem_set_nil(val__)

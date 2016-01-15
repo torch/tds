@@ -19,6 +19,8 @@ function elem.set(celem, lelem)
       C.tds_elem_set_string(celem, lelem, #lelem)
    elseif type(lelem) == 'number' then
       C.tds_elem_set_number(celem, lelem)
+   elseif type(lelem) == 'boolean' then
+      C.tds_elem_set_boolean(celem, lelem)
    else
       local tname = elem.type(lelem)
       local setfunc = tname and elem_ctypes[tname]
@@ -35,6 +37,9 @@ function elem.get(celem)
    local elemtype = C.tds_elem_type(celem)
    if elemtype == 110 then--string.byte('n') then
       local value =  C.tds_elem_get_number(celem)
+      return value
+   elseif elemtype == 98 then--string.byte('b') then
+      local value =  C.tds_elem_get_boolean(celem)
       return value
    elseif elemtype == 115 then--string.byte('s') then
       local value = ffi.string(C.tds_elem_get_string(celem), tonumber(C.tds_elem_get_string_size(celem)))
