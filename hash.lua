@@ -58,12 +58,13 @@ end
 
 function hash:__newindex(lkey, lval)
    assert(self)
-   assert(lkey, 'hash index is nil')
+   assert(lkey or type(lkey) == 'boolean', 'hash index is nil')
    elem.set(key__, lkey)
-   if lval then
-      elem.set(val__, lval)
+   local notnil
+   if lval or type(lval) == 'boolean' then
+      elem.set(val__, lval); notnil = true
    end
-   if C.tds_hash_insert(self, key__, lval and val__ or NULL) == 1 then
+   if C.tds_hash_insert(self, key__, notnil and val__ or NULL) == 1 then
       error('out of memory')
    end
 end
@@ -71,7 +72,7 @@ end
 function hash:__index(lkey)
    local lval
    assert(self)
-   assert(lkey, 'hash index is nil')
+   assert(lkey or type(lkey) == 'boolean', 'hash index is nil')
    elem.set(key__, lkey)
    if C.tds_hash_search(self, key__, val__) == 0 then
       lval = elem.get(val__)
@@ -135,7 +136,7 @@ function hash:__tostring()
    local str = {}
    table.insert(str, string.format('tds.Hash[%d]{', #self))
    local function key2str(k)
-      if type(k) == 'string' or type(k) == 'number' then
+      if type(k) == 'string' or type(k) == 'number' or type(k) == 'boolean' then
          return tostring(k)
       elseif torch then
          return torch.type(k)
