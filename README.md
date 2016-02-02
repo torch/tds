@@ -25,8 +25,8 @@ A hash can contain any element (either as key or value) supported by `tds`.
 
 If a lua table `tbl` is provided, the Hash will be filled up with
 corresponding elements. Tables inside the `tbl` will be also converted
-(recursively) to [tds.Vec](#tds.Vec) (if they contain only contiguous
-number keys starting from 1) or [tds.Hash](#tds.Hash) otherwise.
+(recursively) to [tds.Vec](#tds.Vec) (if they contain only number keys) or
+[tds.Hash](#tds.Hash) otherwise.
 
 ### d[key] = value ###
 
@@ -65,10 +65,10 @@ single lua table `tbl` (or several arguments) is (are) passed at
 construction, the vector will be filled with the lua table contents (or the
 given arguments).
 
-If provided, `tbl` must contain only contiguous number keys starting at 1.
-Tables inside the `tbl` (or passed as arguments) will also be converted
-(recursively) to [tds.Vec](#tds.Vec) (if they contain only contiguous
-number keys starting from 1) or [tds.Hash](#tds.Hash) otherwise.
+If provided, `tbl` must contain only number keys. Tables inside the `tbl`
+(or passed as arguments) will also be converted (recursively) to
+[tds.Vec](#tds.Vec) (if they contain only number keys) or
+[tds.Hash](#tds.Hash) otherwise.
 
 A vector can contain any element (as value) supported by `tds`, as well as
 the `nil` value.
