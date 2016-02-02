@@ -111,9 +111,10 @@ local function isvec(tbl)
    return n == #tbl
 end
 
-local function fill(self, tbl)
-   assert(isvec(tbl), 'lua table with number keys (1...N) expected')
-   for key, val in ipairs(tbl) do
+local function fill(self, tbl, force)
+   assert(force or isvec(tbl), 'lua table with number keys (1...N) expected')
+   for key=1,(tbl.n or #tbl) do
+      local val = tbl[key]
       if type(val) == 'table' then
          if isvec(val) then
             self[key] = tds.Vec(val)
@@ -136,7 +137,7 @@ function vec:__new(...) -- beware of the :
    if select('#', ...) == 1 and type(select(1, ...)) == 'table' then
       fill(self, select(1, ...))
    elseif select('#', ...) > 0 then
-      fill(self, {...})
+      fill(self, table.pack(...), true)
    end
    return self
 end

@@ -65,10 +65,10 @@ single lua table `tbl` (or several arguments) is (are) passed at
 construction, the vector will be filled with the lua table contents (or the
 given arguments).
 
-If provided, `tbl` must contain only contiguous number keys starting at 1.
+If provided, `tbl` must contain only contiguous number keys starting at 1 and no holes.
 Tables inside the `tbl` (or passed as arguments) will also be converted
 (recursively) to [tds.Vec](#tds.Vec) (if they contain only contiguous
-number keys starting from 1) or [tds.Hash](#tds.Hash) otherwise.
+number keys starting from 1 and no holes) or [tds.Hash](#tds.Hash) otherwise.
 
 A vector can contain any element (as value) supported by `tds`, as well as
 the `nil` value.
