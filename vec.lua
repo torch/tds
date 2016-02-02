@@ -104,16 +104,17 @@ function mt:sort(compare)
 end
 
 local function isvec(tbl)
-   local n = 0
    for k, v in pairs(tbl) do
-      n = n + 1
+      if type(k) ~= 'number' then
+         return false
+      end
    end
-   return n == #tbl
+   return true
 end
 
 local function fill(self, tbl)
-   assert(isvec(tbl), 'lua table with number keys (1...N) expected')
-   for key, val in ipairs(tbl) do
+   assert(isvec(tbl), 'lua table with number keys expected')
+   for key, val in pairs(tbl) do
       if type(val) == 'table' then
          if isvec(val) then
             self[key] = tds.Vec(val)

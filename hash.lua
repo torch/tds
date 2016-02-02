@@ -13,11 +13,12 @@ local hash = {}
 local NULL = not jit and ffi.C.NULL or nil
 
 local function isvec(tbl)
-   local n = 0
    for k, v in pairs(tbl) do
-      n = n + 1
+      if type(k) ~= 'number' then
+         return false
+      end
    end
-   return n == #tbl
+   return true
 end
 
 local function fill(self, tbl)
