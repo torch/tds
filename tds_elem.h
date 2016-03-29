@@ -1,6 +1,7 @@
 #ifndef TDS_ELEM_H
 #define TDS_ELEM_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
