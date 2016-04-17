@@ -41,7 +41,7 @@ function mt:remove(lkey)
 end
 
 function mt:resize(size)
-   assert(type(size) == 'number' and size > 0, 'size must be a positive number')
+   assert(type(size) == 'number' and size >= 0, 'size must be a strictly positive number')
    C.tds_vec_resize(self, size)
 end
 
