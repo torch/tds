@@ -13,6 +13,7 @@ add_library(${PKGNAME} MODULE
   "tds_elem.c"
   "tds_hash.c"
   "tds_vec.c"
+  "tds_atomic_counter.c"
 )
 
 IF(Torch_FOUND)
