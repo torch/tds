@@ -54,6 +54,7 @@ void tds_vec_retain(tds_vec *vec);
 void tds_vec_free(tds_vec* vec);
 
 /* atomic counter */
+char tds_has_atomic(void);
 typedef struct tds_atomic_counter_ tds_atomic_counter;
 tds_atomic_counter* tds_atomic_new(void);
 long tds_atomic_inc(tds_atomic_counter *atomic);

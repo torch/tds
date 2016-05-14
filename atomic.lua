@@ -20,6 +20,9 @@ function mt:set(value)
 end
 
 function atomic:__new(...)
+  if C.tds_has_atomic()==0 then
+    error('atomic counter not available (Torch not found)')
+  end
   local self = C.tds_atomic_new()
   if self == NULL then
     error('unable to allocate atomic')
