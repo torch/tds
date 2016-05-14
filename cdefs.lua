@@ -53,4 +53,14 @@ void tds_vec_sort(tds_vec *vec, int (*compare)(const tds_elem *elem1, const tds_
 void tds_vec_retain(tds_vec *vec);
 void tds_vec_free(tds_vec* vec);
 
+/* atomic counter */
+char tds_has_atomic(void);
+typedef struct tds_atomic_counter_ tds_atomic_counter;
+tds_atomic_counter* tds_atomic_new(void);
+long tds_atomic_inc(tds_atomic_counter *atomic);
+long tds_atomic_get(tds_atomic_counter *atomic);
+void tds_atomic_set(tds_atomic_counter *atomic, long value);
+void tds_atomic_retain(tds_atomic_counter *atomic);
+void tds_atomic_free(tds_atomic_counter *atomic);
+
 ]]
