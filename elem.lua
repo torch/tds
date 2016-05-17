@@ -98,7 +98,7 @@ if pcall(require, 'torch') then
       end
    )
 
-   for _, Real in ipairs{'Double', 'Float', 'Long', 'Int', 'Short', 'Char', 'Byte'} do
+   local function addTensorType(Real)
       local cdefs = [[
 void THRealTensor_retain(THRealTensor *self);
 void THRealTensor_free(THRealTensor *self);
@@ -123,7 +123,17 @@ void THRealTensor_free(THRealTensor *self);
             return lelem
          end
       )
+   end
 
+   for _, Real in ipairs{'Double', 'Float', 'Long', 'Int', 'Short', 'Char', 'Byte'} do
+      addTensorType(Real)
+   end
+
+   if pcall(require, 'cutorch') then
+      for _, Real in ipairs{'CudaHalf', 'CudaDouble', 'Cuda',
+                            'CudaLong', 'CudaInt', 'CudaShort', 'CudaChar', 'CudaByte'} do
+         addTensorType(Real)
+      end
    end
 end
 
