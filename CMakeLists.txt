@@ -15,6 +15,9 @@ add_library(${PKGNAME} MODULE
   "tds_vec.c"
   "tds_atomic_counter.c"
 )
+SET_TARGET_PROPERTIES(${PKGNAME} PROPERTIES
+  PREFIX "lib"
+  IMPORT_PREFIX "lib")
 
 IF(Torch_FOUND)
   TARGET_LINK_LIBRARIES(${PKGNAME} TH)
@@ -27,3 +30,8 @@ FILE(GLOB luafiles *.lua)
 
 install(FILES ${luafiles}
   DESTINATION ${LUA_PATH}/${PKGNAME})
+
+if(MSVC)
+    set(CMAKE_MODULE_LINKER_FLAGS
+        "${CMAKE_MODULE_LINKER_FLAGS} /DEF:..\\tds.def")
+endif()

@@ -61,7 +61,7 @@ end
 
 -- torch specific
 if pcall(require, 'torch') then
-   local T = ffi.C
+   local T = ffi.os ~= 'Windows' and ffi.C or ffi.load('TH')
 
    elem.type = torch.typename
 
