@@ -5,6 +5,7 @@ tds_elem_new
 tds_elem_free
 tds_elem_hashkey
 tds_elem_isequal
+tds_elem_set_subtype
 tds_elem_set_number
 tds_elem_set_boolean
 tds_elem_set_string
@@ -16,6 +17,7 @@ tds_elem_get_string_size
 tds_elem_get_pointer
 tds_elem_get_pointer_free
 tds_elem_type
+tds_elem_subtype
 tds_elem_free_content
 tds_elem_set_nil
 tds_elem_isnil

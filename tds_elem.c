@@ -78,7 +78,7 @@ uint32_t tds_elem_hashkey(tds_elem *elem)
 
 int tds_elem_isequal(tds_elem *elem1, tds_elem *elem2)
 {
-  if(elem1->type != elem2->type)
+  if(elem1->type != elem2->type || elem1->subtype != elem1->subtype)
     return 0;
   switch(elem1->type) {
     case 'n':
@@ -97,21 +97,29 @@ int tds_elem_isequal(tds_elem *elem1, tds_elem *elem2)
   }
 }
 
+void tds_elem_set_subtype(tds_elem *elem, char subtype)
+{
+  elem->subtype = subtype;
+}
+
 void tds_elem_set_number(tds_elem *elem, double num)
 {
   elem->type = 'n';
+  elem->subtype = 0;
   elem->value.num = num;
 }
 
 void tds_elem_set_boolean(tds_elem *elem, bool flag)
 {
   elem->type = 'b';
+  elem->subtype = 0;
   elem->value.flag = flag;
 }
 
 void tds_elem_set_string(tds_elem *elem, const char *str, size_t size)
 {
   elem->type = 's';
+  elem->subtype = 0;
   elem->value.str.data = tds_malloc(size);
   if(elem->value.str.data) {
     memcpy(elem->value.str.data, str, size);
@@ -122,6 +130,7 @@ void tds_elem_set_string(tds_elem *elem, const char *str, size_t size)
 void tds_elem_set_pointer(tds_elem *elem, void *ptr, void (*free)(void*))
 {
   elem->type = 'p';
+  elem->subtype = 0;
   elem->value.ptr.data = ptr;
   elem->value.ptr.free = free;
 }
@@ -161,6 +170,11 @@ char tds_elem_type(tds_elem *elem)
   return elem->type;
 }
 
+char tds_elem_subtype(tds_elem *elem)
+{
+  return elem->subtype;
+}
+
 void tds_elem_free_content(tds_elem *elem)
 {
   if(elem->type == 's')
@@ -168,11 +182,13 @@ void tds_elem_free_content(tds_elem *elem)
   if(elem->type == 'p' && elem->value.ptr.free)
     elem->value.ptr.free(elem->value.ptr.data);
   elem->type = 0;
+  elem->subtype = 0;
 }
 
 void tds_elem_set_nil(tds_elem *elem)
 {
   elem->type = 0;
+  elem->subtype = 0;
 }
 
 int tds_elem_isnil(tds_elem *elem)
