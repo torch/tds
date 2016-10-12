@@ -1,0 +1,62 @@
+LIBRARY tds
+EXPORTS
+;/* elem */
+tds_elem_new
+tds_elem_free
+tds_elem_hashkey
+tds_elem_isequal
+tds_elem_set_subtype
+tds_elem_set_number
+tds_elem_set_boolean
+tds_elem_set_string
+tds_elem_set_pointer
+tds_elem_get_number
+tds_elem_get_boolean
+tds_elem_get_string
+tds_elem_get_string_size
+tds_elem_get_pointer
+tds_elem_get_pointer_free
+tds_elem_type
+tds_elem_subtype
+tds_elem_free_content
+tds_elem_set_nil
+tds_elem_isnil
+
+EXPORTS
+; /* hash */
+tds_hash_new
+tds_hash_size
+tds_hash_insert
+tds_hash_search
+tds_hash_remove
+tds_hash_retain
+tds_hash_free
+
+EXPORTS
+; /* hash iterator */
+tds_hash_iterator_new
+tds_hash_iterator_next
+tds_hash_iterator_free
+
+EXPORTS
+; /* vec */
+tds_vec_new
+tds_vec_size
+tds_vec_insert
+tds_vec_set
+tds_vec_get
+tds_vec_remove
+tds_vec_resize
+tds_vec_sort
+tds_vec_retain
+tds_vec_free
+
+EXPORTS
+; /* atomic counter */
+tds_has_atomic
+tds_atomic_new
+tds_atomic_inc
+tds_atomic_get
+tds_atomic_set
+tds_atomic_retain
+tds_atomic_free

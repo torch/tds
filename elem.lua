@@ -5,13 +5,19 @@ local C = tds.C
 local elem = {}
 
 local elem_ctypes = {}
+local elem_ctypes_abbr2name = {}
+local elem_ctypes_name2abbr = {}
 
 function elem.type()
 end
 
-function elem.addctype(ttype, free_p, setfunc, getfunc)
+function elem.addctype(ttype, free_p, setfunc, getfunc, abbr)
    elem_ctypes[ttype] = setfunc
    elem_ctypes[tonumber(ffi.cast('intptr_t', free_p))] = getfunc
+   if abbr then
+     elem_ctypes_abbr2name[abbr] = ttype
+     elem_ctypes_name2abbr[ttype] = abbr
+   end
 end
 
 function elem.set(celem, lelem)
@@ -29,6 +35,10 @@ function elem.set(celem, lelem)
       else
          error(string.format('unsupported key/value type <%s> (set)', tname and tname or type(lelem)))
       end
+      local abbr = elem_ctypes_name2abbr[tname]
+      if abbr then
+        C.tds_elem_set_subtype(celem, abbr)
+      end
    end
 end
 
@@ -45,11 +55,12 @@ function elem.get(celem)
       local value = ffi.string(C.tds_elem_get_string(celem), tonumber(C.tds_elem_get_string_size(celem)))
       return value
    elseif elemtype == 112 then--string.byte('p') then
+      local subtype = C.tds_elem_subtype(celem)
       local lelem_p = C.tds_elem_get_pointer(celem)
       local free_p = C.tds_elem_get_pointer_free(celem)
       local getfunc = elem_ctypes[tonumber(ffi.cast('intptr_t', free_p))]
       if getfunc then
-         local value = getfunc(lelem_p)
+         local value = getfunc(lelem_p, subtype)
          return value
       else
          error('unsupported key/value type (get)')
@@ -61,7 +72,7 @@ end
 
 -- torch specific
 if pcall(require, 'torch') then
-   local T = ffi.C
+   local T = ffi.os ~= 'Windows' and ffi.C or ffi.load('TH')
 
    elem.type = torch.typename
 
@@ -110,20 +121,21 @@ void THRealTensor_free(THRealTensor *self);
       local THTensor_free = T[string.format('TH%sTensor_free', Real)]
       local tensor_type_id = string.format('torch.%sTensor', Real)
       elem.addctype(
-         string.format('torch.%sTensor', Real),
+         tensor_type_id,
          THTensor_free,
          function(lelem)
             local lelem_p = lelem:cdata()
             THTensor_retain(lelem_p)
             return lelem_p,  THTensor_free
          end,
-         function(lelem_p)
+         function(lelem_p, subtype)
             THTensor_retain(lelem_p)
+            local tensor_type_id = elem_ctypes_abbr2name[subtype]
             local lelem = torch.pushudata(lelem_p, tensor_type_id)
             return lelem
-         end
+         end,
+         string.byte(Real, 1)
       )
-
    end
 end
 
